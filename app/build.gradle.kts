@@ -8,7 +8,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example"
+        applicationId = "com.aistudio.fastzen.kpmxlo"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -48,4 +48,5 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.play.services.ads)
 }

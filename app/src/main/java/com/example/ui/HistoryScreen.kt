@@ -30,9 +30,9 @@ fun HistoryScreen(
 ) {
     var selectedSection by remember { mutableStateOf("Sessions") }
 
-    val totalHours = sessions.sumOf { it.durationSeconds } / 3600
-    val longestHours = sessions.maxOfOrNull { it.durationSeconds }?.div(3600) ?: 0
-    val completedCount = sessions.count { it.completedTarget }
+    val totalHours = remember(sessions) { sessions.sumOf { it.durationSeconds } / 3600 }
+    val longestHours = remember(sessions) { sessions.maxOfOrNull { it.durationSeconds }?.div(3600) ?: 0 }
+    val completedCount = remember(sessions) { sessions.count { it.completedTarget } }
 
     LazyColumn(
         modifier = Modifier
@@ -171,7 +171,7 @@ fun HistoryScreen(
                     }
                 }
             } else {
-                items(sessions) { session ->
+                items(sessions, key = { it.id }, contentType = { "session_card" }) { session ->
                     FastSessionCard(session = session)
                 }
             }

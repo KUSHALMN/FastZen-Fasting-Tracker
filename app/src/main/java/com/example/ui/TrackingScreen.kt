@@ -325,7 +325,7 @@ fun TrackingScreen(
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(feelings) { feeling ->
+                        items(feelings, key = { it }, contentType = { "feeling_chip" }) { feeling ->
                             val isSelected = feeling == selectedFeeling
                             FilterChip(
                                 selected = isSelected,

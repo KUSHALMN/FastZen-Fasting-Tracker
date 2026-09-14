@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -148,10 +149,11 @@ fun TimerScreen(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
+                val plans = remember { FastingPlan.values() }
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(FastingPlan.values()) { plan ->
+                    items(plans, key = { it.name }, contentType = { "plan_chip" }) { plan ->
                         val isSelected = plan == selectedPlan
                         val chipText = if (plan == FastingPlan.CUSTOM) "Custom (${customHours}h)" else plan.title
 
@@ -254,19 +256,26 @@ fun TimerScreen(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(240.dp)
                     ) {
-                        // Subtle Ambient Breathing Halo behind the dial
+                        // Subtle Ambient Breathing Halo behind the dial (graphicsLayer draws on render thread with zero recomposition)
                         if (isFasting) {
                             Box(
                                 modifier = Modifier
                                     .size(230.dp)
-                                    .scale(breathScale)
+                                    .graphicsLayer {
+                                        scaleX = breathScale
+                                        scaleY = breathScale
+                                        alpha = breathAlpha
+                                    }
                                     .clip(CircleShape)
-                                    .background(animatedStageColor.copy(alpha = breathAlpha))
+                                    .background(animatedStageColor)
                             )
                         }
 
                         val trackColor = MaterialTheme.colorScheme.surfaceVariant
                         val primaryColor = MaterialTheme.colorScheme.primary
+                        val sweepGradientBrush = remember(primaryColor, animatedStageColor) {
+                            Brush.sweepGradient(listOf(primaryColor, animatedStageColor, primaryColor))
+                        }
 
                         Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
                             val strokeWidthPx = 16.dp.toPx()
@@ -284,9 +293,7 @@ fun TimerScreen(
                             if (isFasting && animatedProgress > 0f) {
                                 val sweep = 360f * animatedProgress
                                 drawArc(
-                                    brush = Brush.sweepGradient(
-                                        listOf(primaryColor, animatedStageColor, primaryColor)
-                                    ),
+                                    brush = sweepGradientBrush,
                                     startAngle = -90f,
                                     sweepAngle = sweep,
                                     useCenter = false,

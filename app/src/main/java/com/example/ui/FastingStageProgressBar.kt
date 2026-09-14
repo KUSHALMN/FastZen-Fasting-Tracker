@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,10 +82,9 @@ fun FastingStageProgressBar(
                 .clip(RoundedCornerShape(5.dp)),
             horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            val stages = MetabolicStage.values()
-            stages.forEach { stage ->
+            val stages = remember { MetabolicStage.values() }
+            for (stage in stages) {
                 val isActive = elapsedHours >= stage.startHour
-                val isCurrent = stage == currentStage
                 val weight = when (stage) {
                     MetabolicStage.FED -> 4f
                     MetabolicStage.EARLY_FAST -> 8f
@@ -92,18 +92,11 @@ fun FastingStageProgressBar(
                     MetabolicStage.DEEP_KETOSIS -> 6f
                     MetabolicStage.AUTOPHAGY -> 12f
                 }
-
-                val segmentColor by animateColorAsState(
-                    targetValue = if (isActive) stage.color else stage.color.copy(alpha = 0.20f),
-                    animationSpec = tween(durationMillis = 500),
-                    label = "segment_color_${stage.name}"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .weight(weight)
-                        .fillMaxHeight()
-                        .background(segmentColor)
+                StageTrackSegment(
+                    stage = stage,
+                    isActive = isActive,
+                    weight = weight,
+                    modifier = Modifier.weight(weight)
                 )
             }
         }
@@ -122,4 +115,24 @@ fun FastingStageProgressBar(
             Text(text = "24h+", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+private fun StageTrackSegment(
+    stage: MetabolicStage,
+    isActive: Boolean,
+    weight: Float,
+    modifier: Modifier = Modifier
+) {
+    val segmentColor by animateColorAsState(
+        targetValue = if (isActive) stage.color else stage.color.copy(alpha = 0.20f),
+        animationSpec = tween(durationMillis = 500),
+        label = "segment_color_${stage.name}"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(segmentColor)
+    )
 }

@@ -41,6 +41,9 @@ fun FaqScreen(
 
     val allFaqs = remember { FastingFaqRepository.allFaqs }
     val categories = remember { FastingFaqRepository.categories }
+    val categoryCounts = remember(allFaqs) {
+        allFaqs.groupingBy { it.category }.eachCount()
+    }
 
     // Filter FAQs based on category, search query, and bookmarks
     val filteredFaqs = remember(selectedCategory, searchQuery, showOnlyBookmarked, bookmarkedIds.size) {
@@ -52,23 +55,6 @@ fun FaqScreen(
                     faq.answer.contains(searchQuery, ignoreCase = true) ||
                     faq.keyTakeaway.contains(searchQuery, ignoreCase = true)
             matchesBookmark && matchesCategory && matchesSearch
-        }
-    }
-
-    // Helper for category theme color
-    fun getCategoryColor(category: String): Color {
-        return when (category) {
-            "Drinks & Fasting" -> Color(0xFF0284C7)      // Ocean Blue
-            "Metabolism & Science" -> Color(0xFF8B5CF6)  // Violet
-            "Hunger & Symptoms" -> Color(0xFFEA580C)     // Warm Amber
-            "Breaking a Fast" -> Color(0xFF10B981)       // Emerald
-            "Fitness & Muscle" -> Color(0xFFEF4444)      // Crimson
-            "Women's Health" -> Color(0xFFEC4899)        // Rose Pink
-            "Protocols & Habits" -> Color(0xFF14B8A6)    // Teal
-            "Myths & Mistakes" -> Color(0xFFF59E0B)      // Gold
-            "Mindset & Psychology" -> Color(0xFF6366F1)  // Indigo
-            "Longevity & Anti-Aging" -> Color(0xFF3B82F6)// Deep Azure
-            else -> Color(0xFF00796B)
         }
     }
 
@@ -226,9 +212,9 @@ fun FaqScreen(
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(categories) { category ->
+                items(categories, key = { it }, contentType = { "category_chip" }) { category ->
                     val isSelected = category == selectedCategory && !showOnlyBookmarked
-                    val count = if (category == "All") allFaqs.size else allFaqs.count { it.category == category }
+                    val count = if (category == "All") allFaqs.size else (categoryCounts[category] ?: 0)
 
                     FilterChip(
                         selected = isSelected,
@@ -295,164 +281,199 @@ fun FaqScreen(
             }
         } else {
             // FAQs List with Animated Expansion, Copy, and Bookmark Actions
-            items(filteredFaqs, key = { it.id }) { faq ->
+            items(filteredFaqs, key = { it.id }, contentType = { "faq_item" }) { faq ->
                 val isExpanded = expandedIds.contains(faq.id)
                 val isBookmarked = bookmarkedIds.contains(faq.id)
-                val categoryColor = getCategoryColor(faq.category)
+                val categoryColor = getFaqCategoryColor(faq.category)
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .clickable {
-                            if (isExpanded) expandedIds.remove(faq.id)
-                            else expandedIds.add(faq.id)
-                        }
-                        .testTag("faq_item_${faq.id}"),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp)
+                FaqCard(
+                    faq = faq,
+                    isExpanded = isExpanded,
+                    isBookmarked = isBookmarked,
+                    categoryColor = categoryColor,
+                    onToggleExpand = {
+                        if (isExpanded) expandedIds.remove(faq.id)
+                        else expandedIds.add(faq.id)
+                    },
+                    onToggleBookmark = {
+                        if (isBookmarked) bookmarkedIds.remove(faq.id)
+                        else bookmarkedIds.add(faq.id)
+                    },
+                    onCopy = {
+                        val textToCopy = "${faq.question}\n\n${faq.answer}\n\nTakeaway: ${faq.keyTakeaway}"
+                        clipboardManager.setText(AnnotatedString(textToCopy))
+                    }
+                )
+            }
+        }
+    }
+}
+
+// Pure top-level category color mapping (zero allocations)
+fun getFaqCategoryColor(category: String): Color {
+    return when (category) {
+        "Drinks & Fasting" -> Color(0xFF0284C7)      // Ocean Blue
+        "Metabolism & Science" -> Color(0xFF8B5CF6)  // Violet
+        "Hunger & Symptoms" -> Color(0xFFEA580C)     // Warm Amber
+        "Breaking a Fast" -> Color(0xFF10B981)       // Emerald
+        "Fitness & Muscle" -> Color(0xFFEF4444)      // Crimson
+        "Women's Health" -> Color(0xFFEC4899)        // Rose Pink
+        "Protocols & Habits" -> Color(0xFF14B8A6)    // Teal
+        "Myths & Mistakes" -> Color(0xFFF59E0B)      // Gold
+        "Mindset & Psychology" -> Color(0xFF6366F1)  // Indigo
+        "Longevity & Anti-Aging" -> Color(0xFF3B82F6)// Deep Azure
+        else -> Color(0xFF00796B)
+    }
+}
+
+@Composable
+private fun FaqCard(
+    faq: FastingFaqItem,
+    isExpanded: Boolean,
+    isBookmarked: Boolean,
+    categoryColor: Color,
+    onToggleExpand: () -> Unit,
+    onToggleBookmark: () -> Unit,
+    onCopy: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onToggleExpand)
+            .testTag("faq_item_${faq.id}"),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // Colored Category Tag
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = categoryColor.copy(alpha = 0.12f)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Text(
+                            text = faq.category.uppercase(),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.8.sp,
+                            color = categoryColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = faq.question,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = 21.sp
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Bookmark IconButton
+                    IconButton(
+                        onClick = onToggleBookmark,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark question",
+                            tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // Expand/Collapse Icon
+                    IconButton(
+                        onClick = onToggleExpand,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (isExpanded) "Collapse" else "Expand",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Expandable Content
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(modifier = Modifier.padding(top = 12.dp)) {
+                    Text(
+                        text = faq.answer,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 21.sp
+                    )
+
+                    if (faq.keyTakeaway.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = categoryColor.copy(alpha = 0.10f),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                // Colored Category Tag
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = categoryColor.copy(alpha = 0.12f)
-                                ) {
-                                    Text(
-                                        text = faq.category.uppercase(),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        letterSpacing = 0.8.sp,
-                                        color = categoryColor,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = faq.question,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    lineHeight = 21.sp
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lightbulb,
+                                    contentDescription = "Key takeaway",
+                                    tint = categoryColor,
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            }
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Bookmark IconButton
-                                IconButton(
-                                    onClick = {
-                                        if (isBookmarked) bookmarkedIds.remove(faq.id)
-                                        else bookmarkedIds.add(faq.id)
-                                    },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                                        contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark question",
-                                        tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-
-                                // Expand/Collapse Icon
-                                IconButton(
-                                    onClick = {
-                                        if (isExpanded) expandedIds.remove(faq.id)
-                                        else expandedIds.add(faq.id)
-                                    },
-                                    modifier = Modifier.size(36.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = faq.keyTakeaway,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = categoryColor,
+                                    lineHeight = 17.sp
+                                )
                             }
                         }
+                    }
 
-                        // Expandable Content
-                        AnimatedVisibility(
-                            visible = isExpanded,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Quick Copy Answer Button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = onCopy,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            Column(modifier = Modifier.padding(top = 12.dp)) {
-                                Text(
-                                    text = faq.answer,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    lineHeight = 21.sp
-                                )
-
-                                if (faq.keyTakeaway.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = categoryColor.copy(alpha = 0.10f),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Lightbulb,
-                                                contentDescription = "Key takeaway",
-                                                tint = categoryColor,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Text(
-                                                text = faq.keyTakeaway,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = categoryColor,
-                                                lineHeight = 17.sp
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Quick Copy Answer Button
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    TextButton(
-                                        onClick = {
-                                            val textToCopy = "${faq.question}\n\n${faq.answer}\n\nTakeaway: ${faq.keyTakeaway}"
-                                            clipboardManager.setText(AnnotatedString(textToCopy))
-                                        },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ContentCopy,
-                                            contentDescription = "Copy answer",
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Copy", fontSize = 11.sp)
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy answer",
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Copy", fontSize = 11.sp)
                         }
                     }
                 }
