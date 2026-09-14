@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -7,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,12 +19,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.MetabolicStage
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun FastingStageProgressBar(
     elapsedHours: Float,
     currentStage: MetabolicStage,
     modifier: Modifier = Modifier
 ) {
+    val animatedStageColor by animateColorAsState(
+        targetValue = currentStage.color,
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+        label = "progress_stage_color"
+    )
+
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -37,21 +47,31 @@ fun FastingStageProgressBar(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(9.dp)
                         .clip(CircleShape)
-                        .background(currentStage.color)
+                        .background(animatedStageColor)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = currentStage.title,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = currentStage.color
-                )
+
+                AnimatedContent(
+                    targetState = currentStage,
+                    transitionSpec = {
+                        (slideInVertically { it / 2 } + fadeIn(tween(400)))
+                            .togetherWith(slideOutVertically { -it / 2 } + fadeOut(tween(300)))
+                    },
+                    label = "progress_stage_name_anim"
+                ) { stage ->
+                    Text(
+                        text = stage.title,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = animatedStageColor
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Multi-segment stage track
         Row(
@@ -73,13 +93,17 @@ fun FastingStageProgressBar(
                     MetabolicStage.AUTOPHAGY -> 12f
                 }
 
+                val segmentColor by animateColorAsState(
+                    targetValue = if (isActive) stage.color else stage.color.copy(alpha = 0.20f),
+                    animationSpec = tween(durationMillis = 500),
+                    label = "segment_color_${stage.name}"
+                )
+
                 Box(
                     modifier = Modifier
                         .weight(weight)
                         .fillMaxHeight()
-                        .background(
-                            if (isActive) stage.color else stage.color.copy(alpha = 0.2f)
-                        )
+                        .background(segmentColor)
                 )
             }
         }

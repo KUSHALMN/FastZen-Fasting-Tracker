@@ -1,7 +1,7 @@
 package com.example.ui
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -31,7 +33,10 @@ import com.example.model.MetabolicStage
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.math.cos
+import kotlin.math.sin
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun TimerScreen(
     selectedPlan: FastingPlan,
@@ -61,9 +66,10 @@ fun TimerScreen(
         (elapsedSeconds.toFloat() / targetSeconds.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
+    // Smooth progress sweep
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = tween(600),
+        animationSpec = tween(durationMillis = 750, easing = FastOutSlowInEasing),
         label = "fast_progress"
     )
 
@@ -74,6 +80,40 @@ fun TimerScreen(
         elapsedHours >= 4f -> MetabolicStage.EARLY_FAST
         else -> MetabolicStage.FED
     }
+
+    // Smooth stage color morphing
+    val animatedStageColor by animateColorAsState(
+        targetValue = currentStage.color,
+        animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
+        label = "stage_color_transition"
+    )
+
+    val animatedStageBgColor by animateColorAsState(
+        targetValue = currentStage.color.copy(alpha = 0.16f),
+        animationSpec = tween(durationMillis = 700),
+        label = "stage_bg_transition"
+    )
+
+    // Breathing pulse animation for active fast dial
+    val infiniteTransition = rememberInfiniteTransition(label = "ambient_fasting_pulse")
+    val breathScale by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2800, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breath_scale"
+    )
+    val breathAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.08f,
+        targetValue = 0.20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2800, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breath_alpha"
+    )
 
     LazyColumn(
         modifier = Modifier
@@ -193,7 +233,7 @@ fun TimerScreen(
             }
         }
 
-        // Circular Timer Card
+        // Circular Timer Card with Subtle Breathing & Stage Transitions
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -209,39 +249,72 @@ fun TimerScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Circular Dial
+                    // Circular Dial Container
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.size(240.dp)
                     ) {
+                        // Subtle Ambient Breathing Halo behind the dial
+                        if (isFasting) {
+                            Box(
+                                modifier = Modifier
+                                    .size(230.dp)
+                                    .scale(breathScale)
+                                    .clip(CircleShape)
+                                    .background(animatedStageColor.copy(alpha = breathAlpha))
+                            )
+                        }
+
                         val trackColor = MaterialTheme.colorScheme.surfaceVariant
                         val primaryColor = MaterialTheme.colorScheme.primary
-                        val stageColor = currentStage.color
 
                         Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
-                            // Background track
+                            val strokeWidthPx = 16.dp.toPx()
+
+                            // Background static track
                             drawArc(
                                 color = trackColor,
                                 startAngle = -90f,
                                 sweepAngle = 360f,
                                 useCenter = false,
-                                style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                                style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
                             )
-                            // Progress arc with stage gradient
+
+                            // Animated Progress arc with dynamic stage color gradient
                             if (isFasting && animatedProgress > 0f) {
+                                val sweep = 360f * animatedProgress
                                 drawArc(
                                     brush = Brush.sweepGradient(
-                                        listOf(primaryColor, stageColor, primaryColor)
+                                        listOf(primaryColor, animatedStageColor, primaryColor)
                                     ),
                                     startAngle = -90f,
-                                    sweepAngle = 360f * animatedProgress,
+                                    sweepAngle = sweep,
                                     useCenter = false,
-                                    style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                                    style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
+                                )
+
+                                // Glowing indicator bead at the tip of the sweep
+                                val angleRad = Math.toRadians((-90f + sweep).toDouble())
+                                val arcRadius = (size.minDimension - strokeWidthPx) / 2f
+                                val centerX = size.width / 2f
+                                val centerY = size.height / 2f
+                                val beadX = centerX + (arcRadius * cos(angleRad)).toFloat()
+                                val beadY = centerY + (arcRadius * sin(angleRad)).toFloat()
+
+                                drawCircle(
+                                    color = animatedStageColor.copy(alpha = 0.4f),
+                                    radius = 12.dp.toPx(),
+                                    center = Offset(beadX, beadY)
+                                )
+                                drawCircle(
+                                    color = Color.White,
+                                    radius = 6.dp.toPx(),
+                                    center = Offset(beadX, beadY)
                                 )
                             }
                         }
 
-                        // Center Info
+                        // Center Info with animated stage badge and countdown
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
@@ -250,45 +323,71 @@ fun TimerScreen(
                                 text = if (isFasting) "FASTING" else "READY",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = animatedStageColor,
                                 letterSpacing = 2.sp
                             )
+
                             Spacer(modifier = Modifier.height(4.dp))
+
+                            // Large Digital Timer Display
                             Text(
                                 text = formatDurationClock(if (isFasting) elapsedSeconds else 0L),
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (isFasting) {
-                                    val remaining = (targetSeconds - elapsedSeconds)
-                                    if (remaining > 0) {
-                                        "${formatDurationClock(remaining)} remaining"
-                                    } else {
-                                        "+${formatDurationClock(-remaining)} beyond target"
-                                    }
-                                } else {
-                                    "Target: $activeTargetHours hours"
+
+                            // Animated Remaining / Beyond Target text
+                            AnimatedContent(
+                                targetState = isTargetReached,
+                                transitionSpec = {
+                                    fadeIn(tween(400)) togetherWith fadeOut(tween(300))
                                 },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                                label = "target_text_transition"
+                            ) { reached ->
+                                Text(
+                                    text = if (isFasting) {
+                                        val remaining = (targetSeconds - elapsedSeconds)
+                                        if (remaining > 0) {
+                                            "${formatDurationClock(remaining)} remaining"
+                                        } else {
+                                            "+${formatDurationClock(-remaining)} beyond target"
+                                        }
+                                    } else {
+                                        "Target: $activeTargetHours hours"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (reached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = if (reached) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            }
 
                             if (isFasting) {
                                 Spacer(modifier = Modifier.height(10.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = currentStage.color.copy(alpha = 0.18f)
-                                ) {
-                                    Text(
-                                        text = currentStage.title,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = currentStage.color,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                    )
+
+                                // Subtle Animated Stage Badge Transition
+                                AnimatedContent(
+                                    targetState = currentStage,
+                                    transitionSpec = {
+                                        (slideInVertically { it / 2 } + fadeIn(tween(400)))
+                                            .togetherWith(slideOutVertically { -it / 2 } + fadeOut(tween(300)))
+                                    },
+                                    label = "stage_badge_transition"
+                                ) { stage ->
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = animatedStageBgColor
+                                    ) {
+                                        Text(
+                                            text = stage.title,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = animatedStageColor,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -481,7 +580,7 @@ fun TimerScreen(
             }
         }
 
-        // Metabolic Biological Explanation Card
+        // Metabolic Biological Explanation Card with smooth animated transition
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -490,48 +589,57 @@ fun TimerScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+                AnimatedContent(
+                    targetState = currentStage,
+                    transitionSpec = {
+                        (fadeIn(tween(450)) + slideInVertically { it / 6 })
+                            .togetherWith(fadeOut(tween(250)) + slideOutVertically { -it / 6 })
+                    },
+                    label = "stage_card_explanation_transition"
+                ) { stage ->
+                    Row(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(currentStage.color.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Science,
-                            contentDescription = "Metabolic Stage Science Icon",
-                            tint = currentStage.color
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = currentStage.title,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "(${currentStage.rangeText})",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(stage.color.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Science,
+                                contentDescription = "Metabolic Stage Science Icon",
+                                tint = stage.color
                             )
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = currentStage.description,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 18.sp
-                        )
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = stage.title,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "(${stage.rangeText})",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stage.description,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 18.sp
+                            )
+                        }
                     }
                 }
             }
