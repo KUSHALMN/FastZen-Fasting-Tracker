@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">FastZen</string>
+    <string name="tab_timer">Timer</string>
+    <string name="tab_history">History</string>
+    <string name="tab_water">Water</string>
+    <string name="tab_guides">Guides</string>
+    <string name="tab_settings">Settings</string>
+    <string name="custom_timer">Custom Timer</string>
+    <string name="start_fast">Start Fasting</string>
+    <string name="end_fast">End Fast</string>
+    <string name="fasting_plan">Fasting Plan</string>
+    <string name="stage_anabolic">Fed State (0-4h)</string>
+    <string name="stage_early_fast">Early Fast (4-12h)</string>
+    <string name="stage_ketosis">Ketosis (12-18h)</string>
+    <string name="stage_deep_ketosis">Deep Ketosis (18-24h)</string>
+    <string name="stage_autophagy">Autophagy (24h+)</string>
+    <string name="current_streak">Current Streak</string>
+    <string name="total_fasts">Total Fasts</string>
+    <string name="log_water">Log Water (+250ml)</string>
+    <string name="daily_water_target">Daily Water Target</string>
+</resources>

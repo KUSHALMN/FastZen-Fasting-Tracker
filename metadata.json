@@ -1,0 +1,6 @@
+{
+  "name": "FastZen",
+  "description": "Intermittent Fasting Tracker & Wellness Companion",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
