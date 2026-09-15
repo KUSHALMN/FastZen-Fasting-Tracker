@@ -185,9 +185,9 @@ fun AdBanner(
                         text = "This app includes an active Google AdMob Banner integration.",
                         fontSize = 14.sp
                     )
-                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                     Text(
-                        text = "Status: ${if (isAdLoaded) "Live AdMob Test Ad Loaded" else "Fallback Active (${adLoadError ?: "Waiting for network / Google Play Services"})"}",
+                        text = "Status: ${if (isAdLoaded) "Live AdMob Test Ad Loaded" else "Standby (${adLoadError ?: "Initializing Google Mobile Ads..."})"}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isAdLoaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
@@ -224,8 +224,8 @@ private fun SponsoredFallbackBanner(
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.25f)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.18f)
                     )
                 )
             )
@@ -248,9 +248,11 @@ private fun SponsoredFallbackBanner(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "⚡",
-                            fontSize = 18.sp
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Mindful Zen Fasting",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -259,7 +261,7 @@ private fun SponsoredFallbackBanner(
 
                 Column {
                     Text(
-                        text = "KetoElectrolytes™ • Zero Calorie",
+                        text = "Mindful Fasting Tip",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -267,7 +269,7 @@ private fun SponsoredFallbackBanner(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Clean minerals to stay energized during fasts",
+                        text = "Stay hydrated with pure water & minerals during your window",
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -277,14 +279,14 @@ private fun SponsoredFallbackBanner(
             }
 
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primary
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Text(
-                    text = "Learn More",
+                    text = "AD INFO",
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -89,7 +90,7 @@ fun FaqScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.MenuBook,
+                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
                             contentDescription = "Fasting Encyclopedia Icon",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(28.dp)
@@ -112,6 +113,40 @@ fun FaqScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+            }
+        }
+
+        // Health & Medical Notice
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.HealthAndSafety,
+                        contentDescription = "Medical Information Disclaimer",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(top = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Medical Disclaimer: The guides and metabolic facts provided are for educational and informational awareness only. They do not constitute medical advice or diagnosis. Always consult a physician before beginning any fasting routine.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 15.sp
+                    )
                 }
             }
         }

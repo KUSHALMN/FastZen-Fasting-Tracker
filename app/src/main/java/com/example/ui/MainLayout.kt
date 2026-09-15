@@ -2,6 +2,9 @@ package com.example.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -14,6 +17,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.FastZenStorage
 import com.example.model.FastSession
 import com.example.model.FastingPlan
 import com.example.model.NotificationPreferences
@@ -32,7 +36,7 @@ enum class FastZenTab(
 ) {
     TIMER("Timer", Icons.Filled.Timer, Icons.Outlined.Timer, "nav_timer"),
     TRACKING("Track", Icons.Filled.WaterDrop, Icons.Outlined.WaterDrop, "nav_tracking"),
-    FAQS("Guides", Icons.Filled.MenuBook, Icons.Outlined.MenuBook, "nav_faqs"),
+    FAQS("Guides", Icons.AutoMirrored.Filled.MenuBook, Icons.AutoMirrored.Outlined.MenuBook, "nav_faqs"),
     HISTORY("History", Icons.Filled.DateRange, Icons.Outlined.DateRange, "nav_history"),
     SETTINGS("Settings", Icons.Filled.Settings, Icons.Outlined.Settings, "nav_settings")
 }
@@ -43,78 +47,55 @@ fun MainLayout() {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(FastZenTab.TIMER) }
 
-    // Fasting Plan & Custom Target
-    var selectedPlan by remember { mutableStateOf(FastingPlan.PLAN_16_8) }
-    var customHours by remember { mutableIntStateOf(14) }
-    var activeTargetHours by remember { mutableIntStateOf(16) }
+    // Fasting Plan & Custom Target loaded from persistent local storage
+    var selectedPlan by remember { mutableStateOf(FastZenStorage.getSelectedPlan(context)) }
+    var customHours by remember { mutableIntStateOf(FastZenStorage.getCustomHours(context)) }
+    var activeTargetHours by remember { mutableIntStateOf(FastZenStorage.getActiveTargetHours(context)) }
 
-    // Fasting state
-    var isFasting by remember { mutableStateOf(false) }
-    var fastStartTime by remember { mutableStateOf(0L) }
-    var elapsedSeconds by remember { mutableStateOf(0L) }
+    // Fasting state loaded from persistent local storage
+    var isFasting by remember { mutableStateOf(FastZenStorage.isFasting(context)) }
+    var fastStartTime by remember { mutableStateOf(FastZenStorage.getFastStartTime(context)) }
+    var elapsedSeconds by remember {
+        mutableStateOf(
+            if (isFasting && fastStartTime > 0)
+                ((System.currentTimeMillis() - fastStartTime) / 1000L).coerceAtLeast(0L)
+            else 0L
+        )
+    }
 
     // Notification Preferences
-    var notificationPrefs by remember { mutableStateOf(NotificationPreferences()) }
+    var notificationPrefs by remember { mutableStateOf(FastZenStorage.loadNotificationPreferences(context)) }
 
     // Notification Milestone Flags
-    var goalAlertSent by remember { mutableStateOf(false) }
-    var ketosisAlertSent by remember { mutableStateOf(false) }
-    var autophagyAlertSent by remember { mutableStateOf(false) }
+    var goalAlertSent by remember { mutableStateOf(FastZenStorage.isGoalAlertSent(context)) }
+    var ketosisAlertSent by remember { mutableStateOf(FastZenStorage.isKetosisAlertSent(context)) }
+    var autophagyAlertSent by remember { mutableStateOf(FastZenStorage.isAutophagyAlertSent(context)) }
 
-    // Hydration state
-    var currentWaterMl by remember { mutableIntStateOf(1500) }
+    // Hydration state with automatic midnight reset
+    var currentWaterMl by remember { mutableIntStateOf(FastZenStorage.getWaterMl(context)) }
 
     // Weight entries
     val weightEntries = remember {
-        mutableStateListOf(
-            WeightEntry(id = "1", weightKg = 74.2f, timestamp = System.currentTimeMillis() - 86400000L * 3),
-            WeightEntry(id = "2", weightKg = 73.8f, timestamp = System.currentTimeMillis() - 86400000L * 1),
-            WeightEntry(id = "3", weightKg = 73.4f, timestamp = System.currentTimeMillis())
-        )
+        mutableStateListOf<WeightEntry>().apply {
+            addAll(FastZenStorage.loadWeightEntries(context))
+        }
     }
 
     // Symptoms
     val symptomLogs = remember {
-        mutableStateListOf(
-            SymptomLog(id = "1", feeling = "Energized", energyLevel = 5, timestamp = System.currentTimeMillis() - 7200000L),
-            SymptomLog(id = "2", feeling = "Focused", energyLevel = 4, timestamp = System.currentTimeMillis() - 3600000L)
-        )
+        mutableStateListOf<SymptomLog>().apply {
+            addAll(FastZenStorage.loadSymptomLogs(context))
+        }
     }
 
     // Fasting history
     val sessions = remember {
-        mutableStateListOf(
-            FastSession(
-                id = "1",
-                plan = FastingPlan.PLAN_16_8,
-                targetHours = 16,
-                startTime = System.currentTimeMillis() - 86400000L - (16 * 3600000L + 1800000L),
-                endTime = System.currentTimeMillis() - 86400000L,
-                durationSeconds = 16 * 3600L + 1800L,
-                completedTarget = true
-            ),
-            FastSession(
-                id = "2",
-                plan = FastingPlan.PLAN_18_6,
-                targetHours = 18,
-                startTime = System.currentTimeMillis() - (86400000L * 2) - (18 * 3600000L),
-                endTime = System.currentTimeMillis() - (86400000L * 2),
-                durationSeconds = 18 * 3600L + 600L,
-                completedTarget = true
-            ),
-            FastSession(
-                id = "3",
-                plan = FastingPlan.PLAN_16_8,
-                targetHours = 16,
-                startTime = System.currentTimeMillis() - (86400000L * 3) - (15 * 3600000L),
-                endTime = System.currentTimeMillis() - (86400000L * 3),
-                durationSeconds = 15 * 3600L,
-                completedTarget = false
-            )
-        )
+        mutableStateListOf<FastSession>().apply {
+            addAll(FastZenStorage.loadSessions(context))
+        }
     }
 
-    var streakDays by remember { mutableIntStateOf(6) }
+    var streakDays by remember { mutableIntStateOf(FastZenStorage.getStreakDays(context)) }
 
     // Live timer ticking
     LaunchedEffect(isFasting, fastStartTime) {
@@ -127,6 +108,7 @@ fun MainLayout() {
                     if (elapsedSeconds >= activeTargetHours * 3600L) {
                         NotificationHelper.sendGoalReachedNotification(context, activeTargetHours)
                         goalAlertSent = true
+                        FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
                     }
                 }
 
@@ -139,6 +121,7 @@ fun MainLayout() {
                             "Your body is actively utilizing stored fat for ketones & energy."
                         )
                         ketosisAlertSent = true
+                        FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
                     }
                 }
 
@@ -151,6 +134,7 @@ fun MainLayout() {
                             "Cellular recycling and mitochondrial renewal are now in high gear."
                         )
                         autophagyAlertSent = true
+                        FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
                     }
                 }
 
@@ -185,7 +169,7 @@ fun MainLayout() {
                         modifier = Modifier.testTag("appbar_faq_action")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.HelpOutline,
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                             contentDescription = "Fasting FAQs & Guides",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
@@ -260,79 +244,97 @@ fun MainLayout() {
                             if (selectedPlan == FastingPlan.CUSTOM) {
                                 activeTargetHours = hours
                             }
+                            FastZenStorage.saveFastingState(context, isFasting, fastStartTime, activeTargetHours, selectedPlan, hours)
                         },
                         activeTargetHours = activeTargetHours,
-                        onUpdateActiveTargetHours = { activeTargetHours = it },
+                        onUpdateActiveTargetHours = {
+                            activeTargetHours = it
+                            FastZenStorage.saveFastingState(context, isFasting, fastStartTime, it, selectedPlan, customHours)
+                        },
                         isFasting = isFasting,
                         fastStartTime = fastStartTime,
                         onAdjustStartTime = { newStartTime ->
                             fastStartTime = newStartTime
                             elapsedSeconds = ((System.currentTimeMillis() - newStartTime) / 1000L).coerceAtLeast(0L)
+                            FastZenStorage.saveFastingState(context, isFasting, newStartTime, activeTargetHours, selectedPlan, customHours)
                         },
                         elapsedSeconds = elapsedSeconds,
                         onStartFast = {
-                            fastStartTime = System.currentTimeMillis()
+                            val now = System.currentTimeMillis()
+                            fastStartTime = now
                             elapsedSeconds = 0L
                             isFasting = true
                             goalAlertSent = false
                             ketosisAlertSent = false
                             autophagyAlertSent = false
+                            FastZenStorage.saveFastingState(context, true, now, activeTargetHours, selectedPlan, customHours)
+                            FastZenStorage.saveAlertFlags(context, false, false, false)
                         },
                         onEndFast = {
                             if (elapsedSeconds > 10) {
                                 val targetSecs = activeTargetHours * 3600L
-                                sessions.add(
-                                    0,
-                                    FastSession(
-                                        id = UUID.randomUUID().toString(),
-                                        plan = selectedPlan,
-                                        targetHours = activeTargetHours,
-                                        startTime = fastStartTime,
-                                        endTime = System.currentTimeMillis(),
-                                        durationSeconds = elapsedSeconds,
-                                        completedTarget = elapsedSeconds >= targetSecs
-                                    )
+                                val newSession = FastSession(
+                                    id = UUID.randomUUID().toString(),
+                                    plan = selectedPlan,
+                                    targetHours = activeTargetHours,
+                                    startTime = fastStartTime,
+                                    endTime = System.currentTimeMillis(),
+                                    durationSeconds = elapsedSeconds,
+                                    completedTarget = elapsedSeconds >= targetSecs
                                 )
+                                sessions.add(0, newSession)
+                                FastZenStorage.saveSessions(context, sessions)
                                 streakDays += 1
+                                FastZenStorage.saveStreakDays(context, streakDays)
                             }
                             isFasting = false
                             elapsedSeconds = 0L
+                            fastStartTime = 0L
                             goalAlertSent = false
                             ketosisAlertSent = false
                             autophagyAlertSent = false
+                            FastZenStorage.saveFastingState(context, false, 0L, activeTargetHours, selectedPlan, customHours)
+                            FastZenStorage.saveAlertFlags(context, false, false, false)
                         },
                         currentWaterMl = currentWaterMl,
-                        onAddWater = { currentWaterMl = (currentWaterMl + it).coerceAtMost(5000) },
+                        onAddWater = {
+                            currentWaterMl = (currentWaterMl + it).coerceAtMost(5000)
+                            FastZenStorage.saveWaterMl(context, currentWaterMl)
+                        },
                         onNavigateToFaq = { selectedTab = FastZenTab.FAQS }
                     )
                 }
                 FastZenTab.TRACKING -> {
                     TrackingScreen(
                         currentWaterMl = currentWaterMl,
-                        onAddWater = { currentWaterMl = (currentWaterMl + it).coerceAtMost(5000) },
-                        onResetWater = { currentWaterMl = 0 },
+                        onAddWater = {
+                            currentWaterMl = (currentWaterMl + it).coerceAtMost(5000)
+                            FastZenStorage.saveWaterMl(context, currentWaterMl)
+                        },
+                        onResetWater = {
+                            currentWaterMl = 0
+                            FastZenStorage.saveWaterMl(context, 0)
+                        },
                         weightEntries = weightEntries,
                         onAddWeight = { kg ->
-                            weightEntries.add(
-                                0,
-                                WeightEntry(
-                                    id = UUID.randomUUID().toString(),
-                                    weightKg = kg,
-                                    timestamp = System.currentTimeMillis()
-                                )
+                            val newEntry = WeightEntry(
+                                id = UUID.randomUUID().toString(),
+                                weightKg = kg,
+                                timestamp = System.currentTimeMillis()
                             )
+                            weightEntries.add(0, newEntry)
+                            FastZenStorage.saveWeightEntries(context, weightEntries)
                         },
                         symptomLogs = symptomLogs,
                         onAddSymptom = { feeling, energy ->
-                            symptomLogs.add(
-                                0,
-                                SymptomLog(
-                                    id = UUID.randomUUID().toString(),
-                                    feeling = feeling,
-                                    energyLevel = energy,
-                                    timestamp = System.currentTimeMillis()
-                                )
+                            val newLog = SymptomLog(
+                                id = UUID.randomUUID().toString(),
+                                feeling = feeling,
+                                energyLevel = energy,
+                                timestamp = System.currentTimeMillis()
                             )
+                            symptomLogs.add(0, newLog)
+                            FastZenStorage.saveSymptomLogs(context, symptomLogs)
                         }
                     )
                 }
@@ -355,6 +357,7 @@ fun MainLayout() {
                             } else {
                                 activeTargetHours = customHours
                             }
+                            FastZenStorage.saveFastingState(context, isFasting, fastStartTime, activeTargetHours, plan, customHours)
                         },
                         customHours = customHours,
                         onUpdateCustomHours = { hours ->
@@ -362,9 +365,13 @@ fun MainLayout() {
                             if (selectedPlan == FastingPlan.CUSTOM) {
                                 activeTargetHours = hours
                             }
+                            FastZenStorage.saveFastingState(context, isFasting, fastStartTime, activeTargetHours, selectedPlan, hours)
                         },
                         notificationPrefs = notificationPrefs,
-                        onUpdateNotificationPrefs = { notificationPrefs = it }
+                        onUpdateNotificationPrefs = {
+                            notificationPrefs = it
+                            FastZenStorage.saveNotificationPreferences(context, it)
+                        }
                     )
                 }
             }
