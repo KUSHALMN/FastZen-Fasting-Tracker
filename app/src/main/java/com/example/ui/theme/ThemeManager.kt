@@ -7,13 +7,62 @@ import androidx.compose.ui.graphics.Color
 
 enum class ZenThemePalette(
     val title: String,
-    val primaryColor: Color,
-    val secondaryColor: Color
+    val darkPrimary: Color,
+    val darkSecondary: Color,
+    val darkContainer: Color,
+    val darkOnContainer: Color,
+    val lightPrimary: Color,
+    val lightSecondary: Color,
+    val lightContainer: Color,
+    val lightOnContainer: Color
 ) {
-    ZEN_VIOLET("Zen Violet (Original)", ZenVioletPrimary, ZenVioletSecondary),
-    FOREST_ZEN("Forest Green", ForestPrimary, ForestSecondary),
-    SUNSET_ZEN("Sunset Amber", SunsetPrimary, SunsetSecondary),
-    OCEAN_ZEN("Ocean Blue", OceanPrimary, OceanSecondary)
+    ZEN_VIOLET(
+        title = "Zen Violet (Original)",
+        darkPrimary = ZenVioletPrimaryDark,
+        darkSecondary = ZenVioletSecondaryDark,
+        darkContainer = ZenVioletContainerDark,
+        darkOnContainer = ZenVioletOnContainerDark,
+        lightPrimary = ZenVioletPrimaryLight,
+        lightSecondary = ZenVioletSecondaryLight,
+        lightContainer = ZenVioletContainerLight,
+        lightOnContainer = ZenVioletOnContainerLight
+    ),
+    FOREST_ZEN(
+        title = "Forest Green",
+        darkPrimary = ForestPrimaryDark,
+        darkSecondary = ForestSecondaryDark,
+        darkContainer = ForestContainerDark,
+        darkOnContainer = ForestOnContainerDark,
+        lightPrimary = ForestPrimaryLight,
+        lightSecondary = ForestSecondaryLight,
+        lightContainer = ForestContainerLight,
+        lightOnContainer = ForestOnContainerLight
+    ),
+    SUNSET_ZEN(
+        title = "Sunset Amber",
+        darkPrimary = SunsetPrimaryDark,
+        darkSecondary = SunsetSecondaryDark,
+        darkContainer = SunsetContainerDark,
+        darkOnContainer = SunsetOnContainerDark,
+        lightPrimary = SunsetPrimaryLight,
+        lightSecondary = SunsetSecondaryLight,
+        lightContainer = SunsetContainerLight,
+        lightOnContainer = SunsetOnContainerLight
+    ),
+    OCEAN_ZEN(
+        title = "Ocean Blue",
+        darkPrimary = OceanPrimaryDark,
+        darkSecondary = OceanSecondaryDark,
+        darkContainer = OceanContainerDark,
+        darkOnContainer = OceanOnContainerDark,
+        lightPrimary = OceanPrimaryLight,
+        lightSecondary = OceanSecondaryLight,
+        lightContainer = OceanContainerLight,
+        lightOnContainer = OceanOnContainerLight
+    );
+
+    val primaryColor: Color get() = if (ThemeManager.isDarkMode) darkPrimary else lightPrimary
+    val secondaryColor: Color get() = if (ThemeManager.isDarkMode) darkSecondary else lightSecondary
 }
 
 object ThemeManager {

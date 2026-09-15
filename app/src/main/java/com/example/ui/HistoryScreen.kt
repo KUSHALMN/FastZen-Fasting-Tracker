@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.FastSession
 import com.example.model.MetabolicStage
+import com.example.ui.theme.ThemeManager
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -82,6 +84,10 @@ fun HistoryScreen(
         if (selectedSection == "Sessions") {
             // Summary Stats Cards
             item {
+                val hoursColor = if (ThemeManager.isDarkMode) Color(0xFF38BDF8) else Color(0xFF0284C7)
+                val longestColor = if (ThemeManager.isDarkMode) Color(0xFFF59E0B) else Color(0xFFD97706)
+                val hitColor = if (ThemeManager.isDarkMode) Color(0xFFA855F7) else Color(0xFF7C3AED)
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -97,13 +103,16 @@ fun HistoryScreen(
                         title = "Total Hours",
                         value = "${totalHours}h",
                         icon = Icons.Default.Schedule,
-                        color = Color(0xFF38BDF8),
+                        color = hoursColor,
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
 
             item {
+                val longestColor = if (ThemeManager.isDarkMode) Color(0xFFF59E0B) else Color(0xFFD97706)
+                val hitColor = if (ThemeManager.isDarkMode) Color(0xFFA855F7) else Color(0xFF7C3AED)
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -112,14 +121,14 @@ fun HistoryScreen(
                         title = "Longest Fast",
                         value = "${longestHours}h",
                         icon = Icons.Default.MilitaryTech,
-                        color = Color(0xFFF59E0B),
+                        color = longestColor,
                         modifier = Modifier.weight(1f)
                     )
                     SummaryStatCard(
                         title = "Target Hit",
                         value = "$completedCount",
                         icon = Icons.Default.Stars,
-                        color = Color(0xFFA855F7),
+                        color = hitColor,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -142,7 +151,9 @@ fun HistoryScreen(
                         shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
-                        )
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -183,7 +194,9 @@ fun HistoryScreen(
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -233,7 +246,9 @@ fun HistoryScreen(
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -313,7 +328,9 @@ fun HistoryScreen(
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -371,7 +388,9 @@ fun SummaryStatCard(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -422,7 +441,9 @@ fun FastSessionCard(session: FastSession) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
     ) {
         Row(
             modifier = Modifier

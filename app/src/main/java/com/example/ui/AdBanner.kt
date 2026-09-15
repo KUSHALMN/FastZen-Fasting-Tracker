@@ -122,27 +122,36 @@ fun AdBanner(
                         .height(50.dp)
                         .testTag("admob_adview"),
                     factory = { ctx ->
-                        AdView(ctx).apply {
-                            setAdSize(AdSize.BANNER)
-                            setAdUnitId(adUnitId)
-                            adListener = object : AdListener() {
-                                override fun onAdLoaded() {
-                                    super.onAdLoaded()
-                                    isAdLoaded = true
-                                    adLoadError = null
-                                }
+                        try {
+                            AdView(ctx).apply {
+                                setAdSize(AdSize.BANNER)
+                                setAdUnitId(adUnitId)
+                                adListener = object : AdListener() {
+                                    override fun onAdLoaded() {
+                                        super.onAdLoaded()
+                                        isAdLoaded = true
+                                        adLoadError = null
+                                    }
 
-                                override fun onAdFailedToLoad(error: LoadAdError) {
-                                    super.onAdFailedToLoad(error)
-                                    isAdLoaded = false
-                                    adLoadError = error.message
+                                    override fun onAdFailedToLoad(error: LoadAdError) {
+                                        super.onAdFailedToLoad(error)
+                                        isAdLoaded = false
+                                        adLoadError = error.message
+                                    }
                                 }
+                                loadAd(AdRequest.Builder().build())
                             }
-                            loadAd(AdRequest.Builder().build())
+                        } catch (e: Exception) {
+                            isAdLoaded = false
+                            adLoadError = e.message ?: "Ads unavailable in container environment"
+                            android.view.View(ctx)
                         }
                     },
-                    update = { adView ->
-                        // Re-trigger if needed
+                    update = { _ -> },
+                    onRelease = { adView ->
+                        try {
+                            (adView as? AdView)?.destroy()
+                        } catch (_: Exception) {}
                     }
                 )
 
@@ -169,7 +178,7 @@ fun AdBanner(
                     ) {
                         Text(
                             text = "AD",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 11.sp,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

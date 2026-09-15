@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.MetabolicStage
+import com.example.ui.theme.ThemeManager
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -124,8 +125,9 @@ private fun StageTrackSegment(
     weight: Float,
     modifier: Modifier = Modifier
 ) {
+    val inactiveColor = if (ThemeManager.isDarkMode) stage.color.copy(alpha = 0.20f) else MaterialTheme.colorScheme.surfaceVariant
     val segmentColor by animateColorAsState(
-        targetValue = if (isActive) stage.color else stage.color.copy(alpha = 0.20f),
+        targetValue = if (isActive) stage.color else inactiveColor,
         animationSpec = tween(durationMillis = 500),
         label = "segment_color_${stage.name}"
     )

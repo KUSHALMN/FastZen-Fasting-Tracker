@@ -23,14 +23,18 @@ enum class MetabolicStage(
     val rangeText: String,
     val startHour: Float,
     val endHour: Float,
-    val color: Color,
+    val darkColor: Color,
+    val lightColor: Color,
     val description: String
 ) {
-    FED("Fed State", "0 - 4h", 0f, 4f, StageFedColor, "Insulin levels drop, blood sugar begins to normalize."),
-    EARLY_FAST("Glycogen Burn", "4 - 12h", 4f, 12f, StageEarlyColor, "Stomach is empty; body burns liver glycogen stores."),
-    KETOSIS("Ketosis", "12 - 18h", 12f, 18f, StageKetosisColor, "Fat breakdown accelerates, ketones produced for clean brain fuel."),
-    DEEP_KETOSIS("Deep Ketosis", "18 - 24h", 18f, 24f, StageDeepKetosisColor, "High ketone concentration, reduced inflammation, accelerated fat loss."),
-    AUTOPHAGY("Autophagy", "24h+", 24f, 72f, StageAutophagyColor, "Cellular cleaning, damaged protein recycling, mitochondrial renewal.")
+    FED("Fed State", "0 - 4h", 0f, 4f, StageFedColorDark, StageFedColorLight, "Insulin levels drop, blood sugar begins to normalize."),
+    EARLY_FAST("Glycogen Burn", "4 - 12h", 4f, 12f, StageEarlyColorDark, StageEarlyColorLight, "Stomach is empty; body burns liver glycogen stores."),
+    KETOSIS("Ketosis", "12 - 18h", 12f, 18f, StageKetosisColorDark, StageKetosisColorLight, "Fat breakdown accelerates, ketones produced for clean brain fuel."),
+    DEEP_KETOSIS("Deep Ketosis", "18 - 24h", 18f, 24f, StageDeepKetosisColorDark, StageDeepKetosisColorLight, "High ketone concentration, reduced inflammation, accelerated fat loss."),
+    AUTOPHAGY("Autophagy", "24h+", 24f, 72f, StageAutophagyColorDark, StageAutophagyColorLight, "Cellular cleaning, damaged protein recycling, mitochondrial renewal.");
+
+    val color: Color
+        get() = if (ThemeManager.isDarkMode) darkColor else lightColor
 }
 
 data class FastSession(

@@ -18,4 +18,8 @@
     <string name="total_fasts">Total Fasts</string>
     <string name="log_water">Log Water (+250ml)</string>
     <string name="daily_water_target">Daily Water Target</string>
+
+    <!-- Google Services & Firebase Analytics configuration placeholders -->
+    <string name="google_app_id" translatable="false">1:100000000000:android:0000000000000000</string>
+    <string name="gcm_defaultSenderId" translatable="false">100000000000</string>
 </resources>

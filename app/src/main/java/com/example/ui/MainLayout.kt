@@ -159,7 +159,7 @@ fun MainLayout() {
                             text = if (selectedTab == FastZenTab.TIMER) "FastZen" else selectedTab.title,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -171,7 +171,7 @@ fun MainLayout() {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                             contentDescription = "Fasting FAQs & Guides",
-                            tint = MaterialTheme.colorScheme.onBackground
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(
@@ -181,7 +181,7 @@ fun MainLayout() {
                         Icon(
                             imageVector = if (ThemeManager.isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
                             contentDescription = "Toggle Dark/Light Mode",
-                            tint = MaterialTheme.colorScheme.onBackground
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
