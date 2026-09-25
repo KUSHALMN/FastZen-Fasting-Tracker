@@ -18,8 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.FastZenStorage
+import com.example.model.ElectrolyteProtocol
 import com.example.model.FastSession
 import com.example.model.FastingPlan
+import com.example.model.FastingStyle
 import com.example.model.NotificationPreferences
 import com.example.model.SymptomLog
 import com.example.model.WeightEntry
@@ -96,6 +98,8 @@ fun MainLayout() {
     }
 
     var streakDays by remember { mutableIntStateOf(FastZenStorage.getStreakDays(context)) }
+    var fastingStyle by remember { mutableStateOf(FastZenStorage.loadFastingStyle(context)) }
+    var electrolyteProtocol by remember { mutableStateOf(FastZenStorage.loadElectrolyteProtocol(context)) }
 
     // Live timer ticking
     LaunchedEffect(isFasting, fastStartTime) {
@@ -280,7 +284,8 @@ fun MainLayout() {
                                     startTime = fastStartTime,
                                     endTime = System.currentTimeMillis(),
                                     durationSeconds = elapsedSeconds,
-                                    completedTarget = elapsedSeconds >= targetSecs
+                                    completedTarget = elapsedSeconds >= targetSecs,
+                                    fastingStyle = fastingStyle.title
                                 )
                                 sessions.add(0, newSession)
                                 FastZenStorage.saveSessions(context, sessions)
@@ -296,6 +301,42 @@ fun MainLayout() {
                             FastZenStorage.saveFastingState(context, false, 0L, activeTargetHours, selectedPlan, customHours)
                             FastZenStorage.saveAlertFlags(context, false, false, false)
                         },
+                        onEndFastWithJournal = { clarity, energy, hunger, note, style ->
+                            if (elapsedSeconds > 10) {
+                                val targetSecs = activeTargetHours * 3600L
+                                val newSession = FastSession(
+                                    id = UUID.randomUUID().toString(),
+                                    plan = selectedPlan,
+                                    targetHours = activeTargetHours,
+                                    startTime = fastStartTime,
+                                    endTime = System.currentTimeMillis(),
+                                    durationSeconds = elapsedSeconds,
+                                    completedTarget = elapsedSeconds >= targetSecs,
+                                    mentalClarity = clarity,
+                                    energyLevel = energy,
+                                    hungerLevel = hunger,
+                                    reflectionNote = note,
+                                    fastingStyle = style.title
+                                )
+                                sessions.add(0, newSession)
+                                FastZenStorage.saveSessions(context, sessions)
+                                streakDays += 1
+                                FastZenStorage.saveStreakDays(context, streakDays)
+                            }
+                            isFasting = false
+                            elapsedSeconds = 0L
+                            fastStartTime = 0L
+                            goalAlertSent = false
+                            ketosisAlertSent = false
+                            autophagyAlertSent = false
+                            FastZenStorage.saveFastingState(context, false, 0L, activeTargetHours, selectedPlan, customHours)
+                            FastZenStorage.saveAlertFlags(context, false, false, false)
+                        },
+                        fastingStyle = fastingStyle,
+                        onUpdateFastingStyle = {
+                            fastingStyle = it
+                            FastZenStorage.saveFastingStyle(context, it)
+                        },
                         currentWaterMl = currentWaterMl,
                         onAddWater = {
                             currentWaterMl = (currentWaterMl + it).coerceAtMost(5000)
@@ -306,6 +347,16 @@ fun MainLayout() {
                 }
                 FastZenTab.TRACKING -> {
                     TrackingScreen(
+                        fastingStyle = fastingStyle,
+                        onUpdateFastingStyle = {
+                            fastingStyle = it
+                            FastZenStorage.saveFastingStyle(context, it)
+                        },
+                        electrolyteProtocol = electrolyteProtocol,
+                        onUpdateElectrolyteProtocol = {
+                            electrolyteProtocol = it
+                            FastZenStorage.saveElectrolyteProtocol(context, it)
+                        },
                         currentWaterMl = currentWaterMl,
                         onAddWater = {
                             currentWaterMl = (currentWaterMl + it).coerceAtMost(5000)
@@ -344,7 +395,9 @@ fun MainLayout() {
                 FastZenTab.HISTORY -> {
                     HistoryScreen(
                         sessions = sessions,
-                        streakDays = streakDays
+                        streakDays = streakDays,
+                        currentWaterMl = currentWaterMl,
+                        protocol = electrolyteProtocol
                     )
                 }
                 FastZenTab.SETTINGS -> {

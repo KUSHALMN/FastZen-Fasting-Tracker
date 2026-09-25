@@ -115,48 +115,51 @@ fun AdBanner(
                     .height(52.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Real Google Mobile Ads (AdMob) Banner View
-                AndroidView(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .testTag("admob_adview"),
-                    factory = { ctx ->
-                        try {
-                            AdView(ctx).apply {
-                                setAdSize(AdSize.BANNER)
-                                setAdUnitId(adUnitId)
-                                adListener = object : AdListener() {
-                                    override fun onAdLoaded() {
-                                        super.onAdLoaded()
-                                        isAdLoaded = true
-                                        adLoadError = null
-                                    }
+                if (!com.example.util.DeviceUtils.isEmulator) {
+                    // Real Google Mobile Ads (AdMob) Banner View on physical devices with software layer
+                    AndroidView(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("admob_adview"),
+                        factory = { ctx ->
+                            try {
+                                AdView(ctx).apply {
+                                    setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+                                    setAdSize(AdSize.BANNER)
+                                    setAdUnitId(adUnitId)
+                                    adListener = object : AdListener() {
+                                        override fun onAdLoaded() {
+                                            super.onAdLoaded()
+                                            isAdLoaded = true
+                                            adLoadError = null
+                                        }
 
-                                    override fun onAdFailedToLoad(error: LoadAdError) {
-                                        super.onAdFailedToLoad(error)
-                                        isAdLoaded = false
-                                        adLoadError = error.message
+                                        override fun onAdFailedToLoad(error: LoadAdError) {
+                                            super.onAdFailedToLoad(error)
+                                            isAdLoaded = false
+                                            adLoadError = error.message
+                                        }
                                     }
+                                    loadAd(AdRequest.Builder().build())
                                 }
-                                loadAd(AdRequest.Builder().build())
+                            } catch (e: Exception) {
+                                isAdLoaded = false
+                                adLoadError = e.message ?: "Ads unavailable in container environment"
+                                android.view.View(ctx)
                             }
-                        } catch (e: Exception) {
-                            isAdLoaded = false
-                            adLoadError = e.message ?: "Ads unavailable in container environment"
-                            android.view.View(ctx)
+                        },
+                        update = { _ -> },
+                        onRelease = { adView ->
+                            try {
+                                (adView as? AdView)?.destroy()
+                            } catch (_: Exception) {}
                         }
-                    },
-                    update = { _ -> },
-                    onRelease = { adView ->
-                        try {
-                            (adView as? AdView)?.destroy()
-                        } catch (_: Exception) {}
-                    }
-                )
+                    )
+                }
 
                 // Fallback / Standby Banner when AdMob is initializing or in offline/local emulator mode
-                if (!isAdLoaded) {
+                if (com.example.util.DeviceUtils.isEmulator || !isAdLoaded) {
                     SponsoredFallbackBanner(
                         errorMessage = adLoadError,
                         onClick = { showAdDialog = true }

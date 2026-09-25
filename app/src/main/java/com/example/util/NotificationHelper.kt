@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.data.FastZenStorage
 
 object NotificationHelper {
     const val CHANNEL_ID = "fastzen_notifications"
@@ -76,6 +77,14 @@ object NotificationHelper {
     }
 
     fun sendGoalReachedNotification(context: Context, hours: Int): Boolean {
+        // Trigger Zen Chime soundscape if enabled
+        try {
+            val prefs = FastZenStorage.loadNotificationPreferences(context)
+            if (prefs.playChimeOnGoal) {
+                ZenSoundHelper.playSound(context, prefs.zenChimeSound)
+            }
+        } catch (_: Exception) {}
+
         return showNotification(
             context,
             title = "🎉 Fasting Target Achieved!",

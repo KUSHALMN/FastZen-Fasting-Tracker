@@ -23,14 +23,16 @@ class MainActivity : ComponentActivity() {
         // Explicitly configure window for 120Hz high refresh rate display mode
         optimizeHighRefreshRate()
 
-        // Initialize Google Mobile Ads SDK safely with emulator configuration
-        try {
-            val requestConfig = RequestConfiguration.Builder()
-                .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
-                .build()
-            MobileAds.setRequestConfiguration(requestConfig)
-            MobileAds.initialize(this) {}
-        } catch (_: Exception) {}
+        // Initialize Google Mobile Ads SDK safely (skip on emulator to prevent measurement service bind errors)
+        if (!com.example.util.DeviceUtils.isEmulator) {
+            try {
+                val requestConfig = RequestConfiguration.Builder()
+                    .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
+                    .build()
+                MobileAds.setRequestConfiguration(requestConfig)
+                MobileAds.initialize(this) {}
+            } catch (_: Exception) {}
+        }
 
         setContent {
             FastZenTheme {

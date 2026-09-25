@@ -16,25 +16,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.ElectrolyteProtocol
 import com.example.model.FastSession
 import com.example.model.MetabolicStage
+import com.example.model.ZenBadge
 import com.example.ui.theme.ThemeManager
+import com.example.util.BadgeManager
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun HistoryScreen(
     sessions: List<FastSession>,
-    streakDays: Int = 6
+    streakDays: Int = 6,
+    currentWaterMl: Int = 2000,
+    protocol: ElectrolyteProtocol = ElectrolyteProtocol()
 ) {
     var selectedSection by remember { mutableStateOf("Sessions") }
 
     val totalHours = remember(sessions) { sessions.sumOf { it.durationSeconds } / 3600 }
     val longestHours = remember(sessions) { sessions.maxOfOrNull { it.durationSeconds }?.div(3600) ?: 0 }
     val completedCount = remember(sessions) { sessions.count { it.completedTarget } }
+
+    val badges = remember(sessions, streakDays, currentWaterMl, protocol) {
+        BadgeManager.calculateBadges(sessions, streakDays, currentWaterMl, protocol)
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -53,7 +63,7 @@ fun HistoryScreen(
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                listOf("Sessions", "Analytics & Zones").forEach { tab ->
+                listOf("Sessions", "Badges & Streaks", "Analytics & Zones").forEach { tab ->
                     val isSelected = selectedSection == tab
                     Surface(
                         shape = RoundedCornerShape(10.dp),
@@ -72,7 +82,8 @@ fun HistoryScreen(
                             Text(
                                 text = tab,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 13.sp,
+                                fontSize = 11.sp,
+                                maxLines = 1,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -185,6 +196,73 @@ fun HistoryScreen(
                 items(sessions, key = { it.id }, contentType = { "session_card" }) { session ->
                     FastSessionCard(session = session)
                 }
+            }
+        } else if (selectedSection == "Badges & Streaks") {
+            // Gamified Streak Header Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("streak_milestone_card"),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF59E0B).copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "⚡", fontSize = 28.sp)
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "$streakDays Day Zen Streak! 🔥",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Every fast compounds autophagy, ketone production, and discipline.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Milestone Badges Header
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Consistency Milestones (${badges.count { it.isUnlocked }}/${badges.size})",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            // Badges List
+            items(badges, key = { it.id }, contentType = { "badge_card" }) { badge ->
+                ZenBadgeCard(badge = badge)
             }
         } else {
             // Analytics View
@@ -438,69 +516,275 @@ fun FastSessionCard(session: FastSession) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
         elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (session.completedTarget) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (session.completedTarget) Icons.Default.CheckCircle else Icons.Default.Check,
-                        contentDescription = "Session status",
-                        tint = if (session.completedTarget) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (session.completedTarget) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (session.completedTarget) Icons.Default.CheckCircle else Icons.Default.Check,
+                            contentDescription = "Session status",
+                            tint = if (session.completedTarget) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = session.plan.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            ) {
+                                Text(
+                                    text = session.fastingStyle,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = dateFormat.format(Date(session.startTime)),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
+
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = session.plan.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "${hours}h ${minutes}m",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    Text(
-                        text = dateFormat.format(Date(session.startTime)),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (session.completedTarget) {
+                        Text(
+                            text = "Goal Reached",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${hours}h ${minutes}m",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (session.completedTarget) {
-                    Text(
-                        text = "Goal Reached",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            // Journal Ratings & Reflection Section (if recorded)
+            if (session.mentalClarity != null || session.reflectionNote.isNotBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (session.mentalClarity != null) {
+                        JournalTag(label = "🧠 Clarity", value = "${session.mentalClarity}/5")
+                    }
+                    if (session.energyLevel != null) {
+                        JournalTag(label = "⚡ Energy", value = "${session.energyLevel}/5")
+                    }
+                    if (session.hungerLevel != null) {
+                        JournalTag(label = "🍏 Hunger", value = "${session.hungerLevel}/5")
+                    }
+                }
+
+                if (session.reflectionNote.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "\"${session.reflectionNote}\"",
+                            fontSize = 12.sp,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+@Composable
+private fun JournalTag(label: String, value: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+fun ZenBadgeCard(badge: ZenBadge) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("badge_card_${badge.id}"),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (badge.isUnlocked) {
+                if (ThemeManager.isDarkMode) Color(0xFF1E293B) else Color(0xFFF8FAFC)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (badge.isUnlocked) Color(0xFFF59E0B).copy(alpha = 0.4f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (badge.isUnlocked) 2.dp else 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (badge.isUnlocked) Color(0xFFF59E0B).copy(alpha = 0.2f)
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = badge.emoji,
+                        fontSize = 24.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = badge.title,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        if (badge.isUnlocked) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF10B981).copy(alpha = 0.15f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "Unlocked",
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = "UNLOCKED",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFF10B981)
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = badge.progressText,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = badge.description,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+
+            if (!badge.isUnlocked) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { badge.progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            } else if (badge.unlockedDate != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Achieved: ${badge.unlockedDate}",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+

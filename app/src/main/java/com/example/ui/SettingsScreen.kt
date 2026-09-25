@@ -31,6 +31,7 @@ import com.example.model.NotificationPreferences
 import com.example.ui.theme.ThemeManager
 import com.example.ui.theme.ZenThemePalette
 import com.example.util.NotificationHelper
+import com.example.util.ZenSoundHelper
 
 @Composable
 fun SettingsScreen(
@@ -226,6 +227,94 @@ fun SettingsScreen(
                                 onUpdateNotificationPrefs(notificationPrefs.copy(notifyHydration = it))
                             }
                         )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Zen Chime & Fast-Ending Soundscape
+                        NotificationToggleRow(
+                            title = "Zen Chime & Soundscape",
+                            subtitle = "Calming Tibetan singing bowl or chime when goal is reached",
+                            checked = notificationPrefs.playChimeOnGoal,
+                            onCheckedChange = {
+                                onUpdateNotificationPrefs(notificationPrefs.copy(playChimeOnGoal = it))
+                            }
+                        )
+
+                        if (notificationPrefs.playChimeOnGoal) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                                    .padding(12.dp)
+                            ) {
+                                Text(
+                                    text = "Completion Soundscape",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                val soundscapes = listOf(
+                                    "TIBETAN_BOWL" to "🥣 Tibetan Singing Bowl (432Hz)",
+                                    "ZEN_CHIME" to "🔔 Gentle Harmonic Chime (528Hz)",
+                                    "TEMPLE_BELL" to "⛩️ Zen Temple Bell (144Hz)"
+                                )
+
+                                soundscapes.forEach { (key, label) ->
+                                    val isSelected = notificationPrefs.zenChimeSound == key
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                onUpdateNotificationPrefs(notificationPrefs.copy(zenChimeSound = key))
+                                                ZenSoundHelper.playSound(context, key)
+                                            }
+                                            .padding(vertical = 6.dp, horizontal = 8.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = label,
+                                                fontSize = 12.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (isSelected) {
+                                                Icon(
+                                                    Icons.Default.VolumeUp,
+                                                    contentDescription = "Playing",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                TextButton(
+                                    onClick = {
+                                        ZenSoundHelper.playSound(context, notificationPrefs.zenChimeSound)
+                                        Toast.makeText(context, "Playing Zen Soundscape Preview...", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Preview Sound", fontSize = 12.sp)
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 

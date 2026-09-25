@@ -37,6 +37,23 @@ enum class MetabolicStage(
         get() = if (ThemeManager.isDarkMode) darkColor else lightColor
 }
 
+enum class FastingStyle(
+    val title: String,
+    val subtitle: String,
+    val allowedSummary: String
+) {
+    CLEAN(
+        title = "Clean Fast",
+        subtitle = "Zero calories & zero glycemic impact",
+        allowedSummary = "Water, black coffee, pure green/black tea, electrolytes & salts only"
+    ),
+    DIRTY(
+        title = "Dirty / Keto Fast",
+        subtitle = "Fat-assisted metabolic fast",
+        allowedSummary = "MCT oil, keto coffee, splash of heavy cream, bone broth (<50 kcal)"
+    )
+}
+
 data class FastSession(
     val id: String,
     val plan: FastingPlan,
@@ -44,7 +61,55 @@ data class FastSession(
     val startTime: Long,
     val endTime: Long,
     val durationSeconds: Long,
-    val completedTarget: Boolean
+    val completedTarget: Boolean,
+    val mentalClarity: Int? = null, // 1 to 5
+    val energyLevel: Int? = null,   // 1 to 5
+    val hungerLevel: Int? = null,   // 1 to 5
+    val reflectionNote: String = "",
+    val fastingStyle: String = FastingStyle.CLEAN.title
+)
+
+data class ElectrolyteProtocol(
+    val pinkSalt: Boolean = false,
+    val potassiumMagnesium: Boolean = false,
+    val blackCoffeeOrTea: Boolean = false,
+    val boneBrothOrMineral: Boolean = false,
+    // Mineral tracking in milligrams (mg)
+    val sodiumMg: Int = 0,
+    val potassiumMg: Int = 0,
+    val magnesiumMg: Int = 0,
+    val targetSodiumMg: Int = 2500,
+    val targetPotassiumMg: Int = 1500,
+    val targetMagnesiumMg: Int = 400,
+    // Fasting hours checklist
+    val morningSaltWater: Boolean = false,
+    val middayHydration: Boolean = false,
+    val middayPotassium: Boolean = false,
+    val afternoonSaltBuster: Boolean = false,
+    val eveningMagnesium: Boolean = false
+) {
+    val completedChecklistCount: Int
+        get() = (if (morningSaltWater) 1 else 0) +
+                (if (middayHydration) 1 else 0) +
+                (if (middayPotassium) 1 else 0) +
+                (if (afternoonSaltBuster) 1 else 0) +
+                (if (eveningMagnesium) 1 else 0) +
+                (if (pinkSalt) 1 else 0) +
+                (if (potassiumMagnesium) 1 else 0) +
+                (if (blackCoffeeOrTea) 1 else 0) +
+                (if (boneBrothOrMineral) 1 else 0)
+}
+
+data class ZenBadge(
+    val id: String,
+    val title: String,
+    val emoji: String,
+    val description: String,
+    val requirementText: String,
+    val isUnlocked: Boolean,
+    val progress: Float,
+    val progressText: String,
+    val unlockedDate: String? = null
 )
 
 data class WaterEntry(
@@ -80,5 +145,7 @@ data class NotificationPreferences(
     val notifyGoalReached: Boolean = true,
     val notifyStageMilestones: Boolean = true,
     val notifyHydration: Boolean = true,
-    val hydrationIntervalHours: Int = 2
+    val hydrationIntervalHours: Int = 2,
+    val playChimeOnGoal: Boolean = true,
+    val zenChimeSound: String = "TIBETAN_BOWL"
 )

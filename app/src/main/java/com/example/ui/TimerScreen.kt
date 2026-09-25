@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.FastingPlan
+import com.example.model.FastingStyle
 import com.example.model.MetabolicStage
 import com.example.ui.theme.ThemeManager
 import java.text.SimpleDateFormat
@@ -54,12 +55,16 @@ fun TimerScreen(
     elapsedSeconds: Long,
     onStartFast: () -> Unit,
     onEndFast: () -> Unit,
+    onEndFastWithJournal: (clarity: Int, energy: Int, hunger: Int, reflection: String, style: FastingStyle) -> Unit = { _, _, _, _, _ -> onEndFast() },
+    fastingStyle: FastingStyle = FastingStyle.CLEAN,
+    onUpdateFastingStyle: (FastingStyle) -> Unit = {},
     currentWaterMl: Int,
     onAddWater: (Int) -> Unit,
     onNavigateToFaq: () -> Unit
 ) {
     var showCustomDurationDialog by remember { mutableStateOf(false) }
     var showAdjustStartTimeDialog by remember { mutableStateOf(false) }
+    var showBreakFastJournalDialog by remember { mutableStateOf(false) }
 
     val elapsedHours = elapsedSeconds.toFloat() / 3600f
     val targetSeconds = activeTargetHours * 3600L
@@ -501,7 +506,7 @@ fun TimerScreen(
                         }
                     } else {
                         Button(
-                            onClick = onEndFast,
+                            onClick = { showBreakFastJournalDialog = true },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
@@ -873,6 +878,21 @@ fun TimerScreen(
                 TextButton(onClick = { showAdjustStartTimeDialog = false }) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    if (showBreakFastJournalDialog) {
+        BreakFastJournalDialog(
+            elapsedSeconds = elapsedSeconds,
+            targetHours = activeTargetHours,
+            plan = selectedPlan,
+            currentFastingStyle = fastingStyle,
+            onDismiss = { showBreakFastJournalDialog = false },
+            onConfirmSave = { clarity, energy, hunger, note, chosenStyle ->
+                showBreakFastJournalDialog = false
+                onUpdateFastingStyle(chosenStyle)
+                onEndFastWithJournal(clarity, energy, hunger, note, chosenStyle)
             }
         )
     }

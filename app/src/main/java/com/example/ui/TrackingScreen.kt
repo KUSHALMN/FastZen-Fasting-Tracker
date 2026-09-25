@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.ElectrolyteProtocol
+import com.example.model.FastingStyle
 import com.example.model.SymptomLog
 import com.example.model.WeightEntry
 import com.example.ui.theme.ThemeManager
@@ -28,14 +30,20 @@ import java.util.*
 
 @Composable
 fun TrackingScreen(
+    fastingStyle: FastingStyle,
+    onUpdateFastingStyle: (FastingStyle) -> Unit,
+    electrolyteProtocol: ElectrolyteProtocol,
+    onUpdateElectrolyteProtocol: (ElectrolyteProtocol) -> Unit,
     currentWaterMl: Int,
     onAddWater: (Int) -> Unit,
     onResetWater: () -> Unit,
     weightEntries: List<WeightEntry>,
     onAddWeight: (Float) -> Unit,
     symptomLogs: List<SymptomLog>,
-    onAddSymptom: (String, Int) -> Unit
+    onAddSymptom: (String, Int) -> Unit,
+    initialSubTab: Int = 0
 ) {
+    var selectedSubTab by remember { mutableIntStateOf(initialSubTab) }
     var weightInput by remember { mutableStateOf("") }
     var selectedFeeling by remember { mutableStateOf("Energized") }
     val feelings = listOf("Energized", "Focused", "Calm", "Hungry", "Headache", "Fatigued")
@@ -47,120 +55,199 @@ fun TrackingScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp)
     ) {
-        // Water Hydration Detailed Tracker
+        // Sub-Tab Switcher
         item {
-            Card(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF0284C7).copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.WaterDrop,
-                                    contentDescription = "Hydration tracker icon",
-                                    tint = Color(0xFF0284C7)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "Hydration Tracker",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Goal: 2,500 ml / day",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                val tabs = listOf(
+                    Triple(0, "Electrolytes", Icons.Default.WaterDrop),
+                    Triple(1, "Weight & Body", Icons.Default.MonitorWeight),
+                    Triple(2, "Fasting Style", Icons.Default.LocalCafe)
+                )
 
-                        Text(
-                            text = "$currentWaterMl ml",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = Color(0xFF0284C7)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    val progress = (currentWaterMl.toFloat() / 2500f).coerceIn(0f, 1f)
-                    LinearProgressIndicator(
-                        progress = { progress },
+                tabs.forEach { (index, label, icon) ->
+                    val isSelected = selectedSubTab == index
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        ),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(10.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        color = Color(0xFF0284C7),
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp)),
+                        onClick = { selectedSubTab = index }
                     ) {
-                        Button(
-                            onClick = { onAddWater(250) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(44.dp)
-                                .testTag("add_water_250_btn"),
-                            shape = RoundedCornerShape(12.dp)
+                        Row(
+                            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("+250 ml", fontSize = 13.sp)
-                        }
-                        Button(
-                            onClick = { onAddWater(500) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(44.dp)
-                                .testTag("add_water_500_btn"),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("+500 ml", fontSize = 13.sp)
-                        }
-                        OutlinedButton(
-                            onClick = onResetWater,
-                            modifier = Modifier
-                                .height(44.dp)
-                                .testTag("reset_water_btn"),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Reset Water")
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
+                            )
                         }
                     }
                 }
             }
         }
 
-        // Weight Log Card
-        item {
+        // SUB-TAB 0: Dedicated Electrolyte & Hydration Checklist Interface
+        if (selectedSubTab == 0) {
+            item {
+                ElectrolyteTrackerView(
+                    electrolyteProtocol = electrolyteProtocol,
+                    onUpdateElectrolyteProtocol = onUpdateElectrolyteProtocol,
+                    currentWaterMl = currentWaterMl,
+                    onAddWater = onAddWater,
+                    onResetWater = onResetWater
+                )
+            }
+        }
+        // SUB-TAB 2: Clean Fast vs Dirty Fast Mode Card
+        if (selectedSubTab == 2) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("fasting_style_card"),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.5f else 0.8f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = if (ThemeManager.isDarkMode) 0.dp else 1.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (fastingStyle == FastingStyle.CLEAN) Icons.Default.WaterDrop else Icons.Default.LocalCafe,
+                                        contentDescription = "Fasting style icon",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Fasting Protocol Style",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = fastingStyle.title,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Mode Toggle Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FastingStyle.values().forEach { style ->
+                                val isSelected = style == fastingStyle
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(12.dp)),
+                                    onClick = { onUpdateFastingStyle(style) }
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = style.title,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            fontSize = 12.sp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = if (style == FastingStyle.CLEAN) "Strict Water Fast" else "Keto / Fat Assist",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "Allowed in ${fastingStyle.title}:",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = fastingStyle.allowedSummary,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // SUB-TAB 1: Weight & Symptoms
+        if (selectedSubTab == 1) {
+            // Weight Log Card
+            item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -394,5 +481,7 @@ fun TrackingScreen(
                 }
             }
         }
+        }
     }
 }
+

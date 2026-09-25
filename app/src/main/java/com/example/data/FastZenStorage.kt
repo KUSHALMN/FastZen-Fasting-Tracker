@@ -43,6 +43,24 @@ object FastZenStorage {
     private const val KEY_NOTIF_STAGE = "notif_stage"
     private const val KEY_NOTIF_HYDRATION = "notif_hydration"
     private const val KEY_NOTIF_INTERVAL = "notif_interval"
+    private const val KEY_NOTIF_CHIME = "notif_chime"
+    private const val KEY_NOTIF_SOUND = "notif_sound"
+
+    // Fasting Style & Electrolyte Protocol
+    private const val KEY_FASTING_STYLE = "fasting_style"
+    private const val KEY_ELECTROLYTE_DAY = "electrolyte_day"
+    private const val KEY_ELECTROLYTE_SALT = "electrolyte_salt"
+    private const val KEY_ELECTROLYTE_KM = "electrolyte_km"
+    private const val KEY_ELECTROLYTE_COFFEE = "electrolyte_coffee"
+    private const val KEY_ELECTROLYTE_BROTH = "electrolyte_broth"
+    private const val KEY_ELECTROLYTE_SODIUM_MG = "electrolyte_sodium_mg"
+    private const val KEY_ELECTROLYTE_POTASSIUM_MG = "electrolyte_potassium_mg"
+    private const val KEY_ELECTROLYTE_MAGNESIUM_MG = "electrolyte_magnesium_mg"
+    private const val KEY_ELECTROLYTE_CH_MORNING = "electrolyte_ch_morning"
+    private const val KEY_ELECTROLYTE_CH_MID_HYDR = "electrolyte_ch_mid_hydr"
+    private const val KEY_ELECTROLYTE_CH_MID_POT = "electrolyte_ch_mid_pot"
+    private const val KEY_ELECTROLYTE_CH_AFT_SALT = "electrolyte_ch_aft_salt"
+    private const val KEY_ELECTROLYTE_CH_EVE_MAG = "electrolyte_ch_eve_mag"
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -138,6 +156,12 @@ object FastZenStorage {
                 val obj = jsonArray.getJSONObject(i)
                 val planName = obj.optString("plan", FastingPlan.PLAN_16_8.name)
                 val plan = try { FastingPlan.valueOf(planName) } catch (_: Exception) { FastingPlan.PLAN_16_8 }
+                val clarity = if (obj.has("mentalClarity") && !obj.isNull("mentalClarity")) obj.getInt("mentalClarity") else null
+                val energy = if (obj.has("energyLevel") && !obj.isNull("energyLevel")) obj.getInt("energyLevel") else null
+                val hunger = if (obj.has("hungerLevel") && !obj.isNull("hungerLevel")) obj.getInt("hungerLevel") else null
+                val note = obj.optString("reflectionNote", "")
+                val style = obj.optString("fastingStyle", FastingStyle.CLEAN.title)
+
                 list.add(
                     FastSession(
                         id = obj.getString("id"),
@@ -146,7 +170,12 @@ object FastZenStorage {
                         startTime = obj.getLong("startTime"),
                         endTime = obj.getLong("endTime"),
                         durationSeconds = obj.getLong("durationSeconds"),
-                        completedTarget = obj.getBoolean("completedTarget")
+                        completedTarget = obj.getBoolean("completedTarget"),
+                        mentalClarity = clarity,
+                        energyLevel = energy,
+                        hungerLevel = hunger,
+                        reflectionNote = note,
+                        fastingStyle = style
                     )
                 )
             }
@@ -168,6 +197,11 @@ object FastZenStorage {
                     put("endTime", session.endTime)
                     put("durationSeconds", session.durationSeconds)
                     put("completedTarget", session.completedTarget)
+                    if (session.mentalClarity != null) put("mentalClarity", session.mentalClarity)
+                    if (session.energyLevel != null) put("energyLevel", session.energyLevel)
+                    if (session.hungerLevel != null) put("hungerLevel", session.hungerLevel)
+                    put("reflectionNote", session.reflectionNote)
+                    put("fastingStyle", session.fastingStyle)
                 }
                 jsonArray.put(obj)
             }
@@ -185,7 +219,12 @@ object FastZenStorage {
                 startTime = now - 86400000L - (16 * 3600000L + 1800000L),
                 endTime = now - 86400000L,
                 durationSeconds = 16 * 3600L + 1800L,
-                completedTarget = true
+                completedTarget = true,
+                mentalClarity = 5,
+                energyLevel = 5,
+                hungerLevel = 2,
+                reflectionNote = "Deep mental focus all morning. Autophagy kicked in nicely!",
+                fastingStyle = FastingStyle.CLEAN.title
             ),
             FastSession(
                 id = "2",
@@ -194,7 +233,12 @@ object FastZenStorage {
                 startTime = now - (86400000L * 2) - (18 * 3600000L),
                 endTime = now - (86400000L * 2),
                 durationSeconds = 18 * 3600L + 600L,
-                completedTarget = true
+                completedTarget = true,
+                mentalClarity = 4,
+                energyLevel = 4,
+                hungerLevel = 3,
+                reflectionNote = "Felt steady energy with green tea and pinch of Himalayan salt.",
+                fastingStyle = FastingStyle.CLEAN.title
             ),
             FastSession(
                 id = "3",
@@ -203,7 +247,12 @@ object FastZenStorage {
                 startTime = now - (86400000L * 3) - (15 * 3600000L),
                 endTime = now - (86400000L * 3),
                 durationSeconds = 15 * 3600L,
-                completedTarget = false
+                completedTarget = false,
+                mentalClarity = 3,
+                energyLevel = 3,
+                hungerLevel = 4,
+                reflectionNote = "Broke fast 1 hour early for family dinner. Listened to body.",
+                fastingStyle = FastingStyle.CLEAN.title
             )
         )
     }
@@ -314,7 +363,9 @@ object FastZenStorage {
             notifyGoalReached = prefs.getBoolean(KEY_NOTIF_GOAL, true),
             notifyStageMilestones = prefs.getBoolean(KEY_NOTIF_STAGE, true),
             notifyHydration = prefs.getBoolean(KEY_NOTIF_HYDRATION, true),
-            hydrationIntervalHours = prefs.getInt(KEY_NOTIF_INTERVAL, 2)
+            hydrationIntervalHours = prefs.getInt(KEY_NOTIF_INTERVAL, 2),
+            playChimeOnGoal = prefs.getBoolean(KEY_NOTIF_CHIME, true),
+            zenChimeSound = prefs.getString(KEY_NOTIF_SOUND, "TIBETAN_BOWL") ?: "TIBETAN_BOWL"
         )
     }
 
@@ -325,6 +376,71 @@ object FastZenStorage {
             putBoolean(KEY_NOTIF_STAGE, prefs.notifyStageMilestones)
             putBoolean(KEY_NOTIF_HYDRATION, prefs.notifyHydration)
             putInt(KEY_NOTIF_INTERVAL, prefs.hydrationIntervalHours)
+            putBoolean(KEY_NOTIF_CHIME, prefs.playChimeOnGoal)
+            putString(KEY_NOTIF_SOUND, prefs.zenChimeSound)
+            apply()
+        }
+    }
+
+    // --- Fasting Style (Clean vs Dirty) ---
+
+    fun loadFastingStyle(context: Context): FastingStyle {
+        val name = getPrefs(context).getString(KEY_FASTING_STYLE, FastingStyle.CLEAN.name)
+        return try {
+            FastingStyle.valueOf(name ?: FastingStyle.CLEAN.name)
+        } catch (_: Exception) {
+            FastingStyle.CLEAN
+        }
+    }
+
+    fun saveFastingStyle(context: Context, style: FastingStyle) {
+        getPrefs(context).edit().putString(KEY_FASTING_STYLE, style.name).apply()
+    }
+
+    // --- Electrolyte & Hydration Protocol Checklist ---
+
+    fun loadElectrolyteProtocol(context: Context): ElectrolyteProtocol {
+        val prefs = getPrefs(context)
+        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val savedDay = prefs.getInt(KEY_ELECTROLYTE_DAY, -1)
+
+        return if (savedDay != currentDay) {
+            // Reset for new day
+            ElectrolyteProtocol()
+        } else {
+            ElectrolyteProtocol(
+                pinkSalt = prefs.getBoolean(KEY_ELECTROLYTE_SALT, false),
+                potassiumMagnesium = prefs.getBoolean(KEY_ELECTROLYTE_KM, false),
+                blackCoffeeOrTea = prefs.getBoolean(KEY_ELECTROLYTE_COFFEE, false),
+                boneBrothOrMineral = prefs.getBoolean(KEY_ELECTROLYTE_BROTH, false),
+                sodiumMg = prefs.getInt(KEY_ELECTROLYTE_SODIUM_MG, 0),
+                potassiumMg = prefs.getInt(KEY_ELECTROLYTE_POTASSIUM_MG, 0),
+                magnesiumMg = prefs.getInt(KEY_ELECTROLYTE_MAGNESIUM_MG, 0),
+                morningSaltWater = prefs.getBoolean(KEY_ELECTROLYTE_CH_MORNING, false),
+                middayHydration = prefs.getBoolean(KEY_ELECTROLYTE_CH_MID_HYDR, false),
+                middayPotassium = prefs.getBoolean(KEY_ELECTROLYTE_CH_MID_POT, false),
+                afternoonSaltBuster = prefs.getBoolean(KEY_ELECTROLYTE_CH_AFT_SALT, false),
+                eveningMagnesium = prefs.getBoolean(KEY_ELECTROLYTE_CH_EVE_MAG, false)
+            )
+        }
+    }
+
+    fun saveElectrolyteProtocol(context: Context, protocol: ElectrolyteProtocol) {
+        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        getPrefs(context).edit().apply {
+            putInt(KEY_ELECTROLYTE_DAY, currentDay)
+            putBoolean(KEY_ELECTROLYTE_SALT, protocol.pinkSalt)
+            putBoolean(KEY_ELECTROLYTE_KM, protocol.potassiumMagnesium)
+            putBoolean(KEY_ELECTROLYTE_COFFEE, protocol.blackCoffeeOrTea)
+            putBoolean(KEY_ELECTROLYTE_BROTH, protocol.boneBrothOrMineral)
+            putInt(KEY_ELECTROLYTE_SODIUM_MG, protocol.sodiumMg)
+            putInt(KEY_ELECTROLYTE_POTASSIUM_MG, protocol.potassiumMg)
+            putInt(KEY_ELECTROLYTE_MAGNESIUM_MG, protocol.magnesiumMg)
+            putBoolean(KEY_ELECTROLYTE_CH_MORNING, protocol.morningSaltWater)
+            putBoolean(KEY_ELECTROLYTE_CH_MID_HYDR, protocol.middayHydration)
+            putBoolean(KEY_ELECTROLYTE_CH_MID_POT, protocol.middayPotassium)
+            putBoolean(KEY_ELECTROLYTE_CH_AFT_SALT, protocol.afternoonSaltBuster)
+            putBoolean(KEY_ELECTROLYTE_CH_EVE_MAG, protocol.eveningMagnesium)
             apply()
         }
     }
