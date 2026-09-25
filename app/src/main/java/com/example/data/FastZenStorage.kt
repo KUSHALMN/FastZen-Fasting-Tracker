@@ -115,7 +115,7 @@ object FastZenStorage {
 
     // --- Streak Days ---
 
-    fun getStreakDays(context: Context): Int = getPrefs(context).getInt(KEY_STREAK_DAYS, 6)
+    fun getStreakDays(context: Context): Int = getPrefs(context).getInt(KEY_STREAK_DAYS, 0)
     fun saveStreakDays(context: Context, streak: Int) {
         getPrefs(context).edit().putInt(KEY_STREAK_DAYS, streak).apply()
     }
@@ -132,7 +132,7 @@ object FastZenStorage {
             prefs.edit().putInt(KEY_WATER_DAY, currentDay).putInt(KEY_WATER_ML, 0).apply()
             0
         } else {
-            prefs.getInt(KEY_WATER_ML, 1500)
+            prefs.getInt(KEY_WATER_ML, 0)
         }
     }
 
@@ -148,7 +148,7 @@ object FastZenStorage {
     // --- Completed Sessions History ---
 
     fun loadSessions(context: Context): List<FastSession> {
-        val jsonString = getPrefs(context).getString(KEY_SESSIONS_JSON, null) ?: return defaultSessions()
+        val jsonString = getPrefs(context).getString(KEY_SESSIONS_JSON, null) ?: return emptyList()
         return try {
             val jsonArray = JSONArray(jsonString)
             val list = mutableListOf<FastSession>()
@@ -179,9 +179,9 @@ object FastZenStorage {
                     )
                 )
             }
-            if (list.isEmpty()) defaultSessions() else list
+            list
         } catch (_: Exception) {
-            defaultSessions()
+            emptyList()
         }
     }
 
@@ -209,58 +209,10 @@ object FastZenStorage {
         } catch (_: Exception) {}
     }
 
-    private fun defaultSessions(): List<FastSession> {
-        val now = System.currentTimeMillis()
-        return listOf(
-            FastSession(
-                id = "1",
-                plan = FastingPlan.PLAN_16_8,
-                targetHours = 16,
-                startTime = now - 86400000L - (16 * 3600000L + 1800000L),
-                endTime = now - 86400000L,
-                durationSeconds = 16 * 3600L + 1800L,
-                completedTarget = true,
-                mentalClarity = 5,
-                energyLevel = 5,
-                hungerLevel = 2,
-                reflectionNote = "Deep mental focus all morning. Autophagy kicked in nicely!",
-                fastingStyle = FastingStyle.CLEAN.title
-            ),
-            FastSession(
-                id = "2",
-                plan = FastingPlan.PLAN_18_6,
-                targetHours = 18,
-                startTime = now - (86400000L * 2) - (18 * 3600000L),
-                endTime = now - (86400000L * 2),
-                durationSeconds = 18 * 3600L + 600L,
-                completedTarget = true,
-                mentalClarity = 4,
-                energyLevel = 4,
-                hungerLevel = 3,
-                reflectionNote = "Felt steady energy with green tea and pinch of Himalayan salt.",
-                fastingStyle = FastingStyle.CLEAN.title
-            ),
-            FastSession(
-                id = "3",
-                plan = FastingPlan.PLAN_16_8,
-                targetHours = 16,
-                startTime = now - (86400000L * 3) - (15 * 3600000L),
-                endTime = now - (86400000L * 3),
-                durationSeconds = 15 * 3600L,
-                completedTarget = false,
-                mentalClarity = 3,
-                energyLevel = 3,
-                hungerLevel = 4,
-                reflectionNote = "Broke fast 1 hour early for family dinner. Listened to body.",
-                fastingStyle = FastingStyle.CLEAN.title
-            )
-        )
-    }
-
     // --- Weight Entries ---
 
     fun loadWeightEntries(context: Context): List<WeightEntry> {
-        val jsonString = getPrefs(context).getString(KEY_WEIGHT_JSON, null) ?: return defaultWeightEntries()
+        val jsonString = getPrefs(context).getString(KEY_WEIGHT_JSON, null) ?: return emptyList()
         return try {
             val jsonArray = JSONArray(jsonString)
             val list = mutableListOf<WeightEntry>()
@@ -275,9 +227,9 @@ object FastZenStorage {
                     )
                 )
             }
-            if (list.isEmpty()) defaultWeightEntries() else list
+            list
         } catch (_: Exception) {
-            defaultWeightEntries()
+            emptyList()
         }
     }
 
@@ -297,19 +249,10 @@ object FastZenStorage {
         } catch (_: Exception) {}
     }
 
-    private fun defaultWeightEntries(): List<WeightEntry> {
-        val now = System.currentTimeMillis()
-        return listOf(
-            WeightEntry(id = "1", weightKg = 74.2f, timestamp = now - 86400000L * 3),
-            WeightEntry(id = "2", weightKg = 73.8f, timestamp = now - 86400000L * 1),
-            WeightEntry(id = "3", weightKg = 73.4f, timestamp = now)
-        )
-    }
-
     // --- Symptom Logs ---
 
     fun loadSymptomLogs(context: Context): List<SymptomLog> {
-        val jsonString = getPrefs(context).getString(KEY_SYMPTOMS_JSON, null) ?: return defaultSymptomLogs()
+        val jsonString = getPrefs(context).getString(KEY_SYMPTOMS_JSON, null) ?: return emptyList()
         return try {
             val jsonArray = JSONArray(jsonString)
             val list = mutableListOf<SymptomLog>()
@@ -324,9 +267,9 @@ object FastZenStorage {
                     )
                 )
             }
-            if (list.isEmpty()) defaultSymptomLogs() else list
+            list
         } catch (_: Exception) {
-            defaultSymptomLogs()
+            emptyList()
         }
     }
 
@@ -344,14 +287,6 @@ object FastZenStorage {
             }
             getPrefs(context).edit().putString(KEY_SYMPTOMS_JSON, jsonArray.toString()).apply()
         } catch (_: Exception) {}
-    }
-
-    private fun defaultSymptomLogs(): List<SymptomLog> {
-        val now = System.currentTimeMillis()
-        return listOf(
-            SymptomLog(id = "1", feeling = "Energized", energyLevel = 5, timestamp = now - 7200000L),
-            SymptomLog(id = "2", feeling = "Focused", energyLevel = 4, timestamp = now - 3600000L)
-        )
     }
 
     // --- Notification Preferences ---

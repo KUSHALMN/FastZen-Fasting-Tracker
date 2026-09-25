@@ -1,51 +1,75 @@
 package com.example.ui
 
-import android.content.Context
-import androidx.compose.animation.*
+import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.BuildConfig
+import com.example.util.DeviceUtils
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
 
+/**
+ * AdMob configuration manager.
+ * Test IDs are strictly confined to DEBUG builds and will NEVER be used in RELEASE builds.
+ */
 object AdConfig {
-    // Official Google Mobile Ads sample test banner ad unit ID
-    const val TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+    // Official Google Mobile Ads test IDs — strictly restricted to DEBUG builds
+    const val DEBUG_TEST_APP_ID = "ca-app-pub-3940256099942544~3347511713"
+    const val DEBUG_TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+
+    // Placeholder indicator for unconfigured release builds
+    const val PROD_PLACEHOLDER_PREFIX = "ca-app-pub-0000000000000000"
+
+    /**
+     * Retrieves the active banner ad unit ID based on build variant.
+     * In DEBUG builds, returns the official Google test unit ID.
+     * In RELEASE builds, returns the production unit ID if configured, or empty string if not yet provided.
+     */
+    fun getActiveBannerAdUnitId(): String {
+        return if (BuildConfig.DEBUG) {
+            DEBUG_TEST_BANNER_AD_UNIT_ID
+        } else {
+            val configured = BuildConfig.ADMOB_BANNER_AD_UNIT_ID
+            if (configured.isNotBlank() && !configured.startsWith(PROD_PLACEHOLDER_PREFIX)) {
+                configured
+            } else {
+                ""
+            }
+        }
+    }
+
+    /**
+     * Checks if AdMob is active and configured for the current environment.
+     */
+    fun isAdMobEnabled(): Boolean {
+        return getActiveBannerAdUnitId().isNotBlank()
+    }
 }
 
 @Composable
 fun AdBanner(
     modifier: Modifier = Modifier,
-    adUnitId: String = AdConfig.TEST_BANNER_AD_UNIT_ID,
-    showInfoOnClick: Boolean = true
+    adUnitId: String = AdConfig.getActiveBannerAdUnitId()
 ) {
-    val context = LocalContext.current
     var isAdLoaded by remember { mutableStateOf(false) }
-    var adLoadError by remember { mutableStateOf<String?>(null) }
-    var showAdDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -62,61 +86,42 @@ fun AdBanner(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Ad Identifier Header Bar
+            // Standard Ad Header Label (Google Play compliant disclosure)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { showAdDialog = true }
+                Surface(
+                    shape = RoundedCornerShape(3.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(3.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                    ) {
-                        Text(
-                            text = "AD",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 0.5.sp,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isAdLoaded) "Google AdMob • Test Mode" else "Sponsored Fasting Partner",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        text = "AD",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.5.sp,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                     )
                 }
-
-                IconButton(
-                    onClick = { showAdDialog = true },
-                    modifier = Modifier.size(18.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Ad Info",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.size(13.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Sponsored Partner",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+                )
             }
 
             // Banner Display Area (Standard 320x50 Banner Slot)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(50.dp),
                 contentAlignment = Alignment.Center
             ) {
-                if (!com.example.util.DeviceUtils.isEmulator) {
-                    // Real Google Mobile Ads (AdMob) Banner View on physical devices with software layer
+                if (!DeviceUtils.isEmulator && adUnitId.isNotBlank()) {
                     AndroidView(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -125,28 +130,25 @@ fun AdBanner(
                         factory = { ctx ->
                             try {
                                 AdView(ctx).apply {
-                                    setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+                                    setLayerType(View.LAYER_TYPE_SOFTWARE, null)
                                     setAdSize(AdSize.BANNER)
                                     setAdUnitId(adUnitId)
                                     adListener = object : AdListener() {
                                         override fun onAdLoaded() {
                                             super.onAdLoaded()
                                             isAdLoaded = true
-                                            adLoadError = null
                                         }
 
                                         override fun onAdFailedToLoad(error: LoadAdError) {
                                             super.onAdFailedToLoad(error)
                                             isAdLoaded = false
-                                            adLoadError = error.message
                                         }
                                     }
                                     loadAd(AdRequest.Builder().build())
                                 }
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 isAdLoaded = false
-                                adLoadError = e.message ?: "Ads unavailable in container environment"
-                                android.view.View(ctx)
+                                View(ctx)
                             }
                         },
                         update = { _ -> },
@@ -158,148 +160,67 @@ fun AdBanner(
                     )
                 }
 
-                // Fallback / Standby Banner when AdMob is initializing or in offline/local emulator mode
-                if (com.example.util.DeviceUtils.isEmulator || !isAdLoaded) {
-                    SponsoredFallbackBanner(
-                        errorMessage = adLoadError,
-                        onClick = { showAdDialog = true }
-                    )
+                // Native mindful wellness fallback displayed when waiting for ads or in offline mode
+                if (DeviceUtils.isEmulator || !isAdLoaded || adUnitId.isBlank()) {
+                    SponsoredFallbackBanner()
                 }
             }
         }
     }
-
-    // Ad Information & Configuration Dialog
-    if (showAdDialog) {
-        AlertDialog(
-            onDismissRequest = { showAdDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text(
-                            text = "AD",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Ad Banner Details")
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "This app includes an active Google AdMob Banner integration.",
-                        fontSize = 14.sp
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Text(
-                        text = "Status: ${if (isAdLoaded) "Live AdMob Test Ad Loaded" else "Standby (${adLoadError ?: "Initializing Google Mobile Ads..."})"}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isAdLoaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
-                    )
-                    Text(
-                        text = "Ad Unit ID:\n${adUnitId}",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Format: Standard Banner (320x50 dp)\nProvider: Google Mobile Ads SDK (play-services-ads:23.6.0)",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showAdDialog = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
 }
 
 @Composable
-private fun SponsoredFallbackBanner(
-    errorMessage: String?,
-    onClick: () -> Unit
-) {
+private fun SponsoredFallbackBanner() {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.18f)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.16f)
                     )
                 )
             )
-            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                modifier = Modifier.size(34.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Mindful Zen Fasting",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column {
-                    Text(
-                        text = "Mindful Fasting Tip",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "Stay hydrated with pure water & minerals during your window",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Spa,
+                        contentDescription = "FastZen Mindful Wellness",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "AD INFO",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    text = "Mindful Fasting Tip",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Stay hydrated with clean water & balanced minerals during your fast",
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

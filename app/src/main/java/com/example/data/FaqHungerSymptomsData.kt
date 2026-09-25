@@ -21,8 +21,8 @@ val FaqHungerSymptomsData = listOf(
         id = "h3",
         category = "Hunger & Symptoms",
         question = "Why do I get headaches on the first few days of fasting?",
-        answer = "When you stop eating carbohydrates, insulin plummets. Low insulin signals your kidneys to dump large quantities of water and sodium (natriuresis). This temporary electrolyte depletion causes vascular constriction, which triggers a tension-like headache. Drinking water with 1/2 teaspoon of salt and taking magnesium will almost always resolve it within 30 minutes.",
-        keyTakeaway = "Fasting headaches are almost always sodium deficiency, not lack of food."
+        answer = "During early fasting, shifts in carbohydrate intake and water loss can lead to temporary electrolyte imbalances, which may cause mild headaches or fatigue. Consuming water with balanced electrolytes can help support hydration. If headaches are severe or persist, break your fast and consult a healthcare provider.",
+        keyTakeaway = "Early headaches often relate to hydration balance; seek medical care if symptoms persist."
     ),
     FastingFaqItem(
         id = "h4",

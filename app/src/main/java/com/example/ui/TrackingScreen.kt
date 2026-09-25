@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -44,6 +45,11 @@ fun TrackingScreen(
     initialSubTab: Int = 0
 ) {
     var selectedSubTab by remember { mutableIntStateOf(initialSubTab) }
+
+    // Intercept back button when on subtab 1 or 2 to return to Electrolyte tab first
+    BackHandler(enabled = selectedSubTab != 0) {
+        selectedSubTab = 0
+    }
     var weightInput by remember { mutableStateOf("") }
     var selectedFeeling by remember { mutableStateOf("Energized") }
     val feelings = listOf("Energized", "Focused", "Calm", "Hungry", "Headache", "Fatigued")

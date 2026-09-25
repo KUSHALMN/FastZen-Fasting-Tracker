@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -32,11 +33,16 @@ import java.util.*
 @Composable
 fun HistoryScreen(
     sessions: List<FastSession>,
-    streakDays: Int = 6,
-    currentWaterMl: Int = 2000,
+    streakDays: Int = 0,
+    currentWaterMl: Int = 0,
     protocol: ElectrolyteProtocol = ElectrolyteProtocol()
 ) {
     var selectedSection by remember { mutableStateOf("Sessions") }
+
+    // Intercept back button when not on primary Sessions section
+    BackHandler(enabled = selectedSection != "Sessions") {
+        selectedSection = "Sessions"
+    }
 
     val totalHours = remember(sessions) { sessions.sumOf { it.durationSeconds } / 3600 }
     val longestHours = remember(sessions) { sessions.maxOfOrNull { it.durationSeconds }?.div(3600) ?: 0 }

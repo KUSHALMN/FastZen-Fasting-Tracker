@@ -28,8 +28,8 @@ val FaqWomenHealthData = listOf(
         id = "w4",
         category = "Women's Health",
         question = "Can intermittent fasting help with Polycystic Ovary Syndrome (PCOS)?",
-        answer = "Yes! Up to 80% of women with PCOS have underlying hyperinsulinemia (excess insulin). Insulin stimulates the ovaries to overproduce testosterone and androgens, causing irregular periods, facial hair, and weight gain. Fasting drops insulin dramatically, restoring regular ovulation, androgen balance, and fertility in women with PCOS.",
-        keyTakeaway = "Fasting reduces insulin, lowering excess androgen levels in women with PCOS."
+        answer = "Many women with PCOS have underlying insulin resistance. Some scientific literature suggests structured eating windows may support healthy insulin sensitivity and metabolic wellness. However, PCOS is a complex endocrine condition; fasting is not a cure and should never replace medical therapy. Always consult your endocrinologist or physician before altering your diet.",
+        keyTakeaway = "Fasting may support metabolic awareness, but women with PCOS must consult their physician."
     ),
     FastingFaqItem(
         id = "w5",
@@ -56,8 +56,8 @@ val FaqWomenHealthData = listOf(
         id = "w8",
         category = "Women's Health",
         question = "Is intermittent fasting beneficial for perimenopausal and postmenopausal women?",
-        answer = "Extremely beneficial! During perimenopause and menopause, falling estrogen causes insulin resistance and stubborn visceral belly fat accumulation. Fasting helps postmenopausal women regain insulin sensitivity, balance blood sugar, reduce hot flashes, protect bone density, and curb middle-age weight gain.",
-        keyTakeaway = "Fasting is a powerful tool to combat postmenopausal insulin resistance and visceral belly fat."
+        answer = "During midlife hormonal shifts, metabolic rates and insulin response may change. Some women find that consistent eating windows promote energy balance, mindful nutrition, and healthy weight management. As with all lifestyle changes, discuss dietary adjustments with your healthcare provider.",
+        keyTakeaway = "Gentle fasting schedules may support metabolic mindfulness during midlife transitions."
     ),
     FastingFaqItem(
         id = "w9",
@@ -77,8 +77,8 @@ val FaqWomenHealthData = listOf(
         id = "w11",
         category = "Women's Health",
         question = "How does fasting affect skin health and adult acne?",
-        answer = "Fasting reduces insulin-like growth factor 1 (IGF-1) and androgen production, which directly reduces sebaceous gland oil production and clogged pores. Combined with autophagy recycling damaged skin cells, many women notice clearer, glowing skin within 2-3 weeks.",
-        keyTakeaway = "Lower insulin and IGF-1 from fasting dramatically clears hormonal acne."
+        answer = "Adequate hydration and mindful nutrition during fasting may promote overall skin wellness. While dietary habits can influence general appearance, severe or persistent acne is an inflammatory condition that should be evaluated by a dermatologist.",
+        keyTakeaway = "Good hydration supports skin vitality; persistent acne requires medical evaluation."
     ),
     FastingFaqItem(
         id = "w12",

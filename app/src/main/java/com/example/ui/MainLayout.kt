@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -48,6 +49,11 @@ enum class FastZenTab(
 fun MainLayout() {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(FastZenTab.TIMER) }
+
+    // Intercept back button when not on Timer tab to return to Timer tab first
+    BackHandler(enabled = selectedTab != FastZenTab.TIMER) {
+        selectedTab = FastZenTab.TIMER
+    }
 
     // Fasting Plan & Custom Target loaded from persistent local storage
     var selectedPlan by remember { mutableStateOf(FastZenStorage.getSelectedPlan(context)) }

@@ -14,10 +14,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FastZen">
 
-        <!-- Google AdMob Application ID for development and testing -->
+        <!-- Google AdMob Application ID injected via build variants -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="${admobAppId}"/>
 
         <!-- Optimize AdMob initialization and loading -->
         <meta-data

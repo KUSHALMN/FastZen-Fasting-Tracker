@@ -868,6 +868,39 @@ fun ElectrolyteTrackerView(
             }
         }
 
+        // Educational Mineral Notice
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.45f else 0.85f)
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (ThemeManager.isDarkMode) 0.4f else 0.7f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Icon(
+                    imageVector = Icons.Default.HealthAndSafety,
+                    contentDescription = "Medical Notice",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(top = 2.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Electrolyte Disclaimer: Mineral targets and recipes are educational wellness benchmarks for healthy adults. They are not medical prescriptions. Individuals with kidney disease, cardiovascular conditions, or hypertension must consult their doctor before supplementing sodium, potassium, or magnesium.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
         // 6. Reset Daily Minerals Button
         OutlinedButton(
             onClick = { showResetConfirmDialog = true },
