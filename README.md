@@ -234,17 +234,13 @@ fastzen/
 
 ---
 
-## 👥 Core Contributors
+## 👨‍💻 Author & Creator
 
-We are deeply grateful to the core team contributing to the development, design, and scientific integrity of FastZen:
+FastZen is entirely architected, designed, and developed by **Kushal M.N** as a solo developer:
 
-| Contributor | Role & Specialization | GitHub Profile | Contributions |
+| Developer | Role & Responsibilities | GitHub Profile | Scope |
 | :--- | :--- | :--- | :--- |
-| **Kushal M.N** | **Lead Architect & Android Developer**<br>Core Kotlin, Jetpack Compose UI, State Management & System Services | [@KUSHALMN](https://github.com/KUSHALMN) | 💻 `code`, 🏗️ `arch`, 🚀 `maintenance` |
-| **Varsha Kashyap** | **UI/UX & Design Systems Lead**<br>Material Design 3 tokens, OLED theming, user journey & accessibility | [@varshakashyap](https://github.com/varshakashyap) | 🎨 `design`, 💅 `theming`, 📱 `ux` |
-| **Bindushree V** | **Health Informatics & Research**<br>Metabolic zone algorithms, autophagy milestone research & FAQ literature | [@bindushreev](https://github.com/bindushreev) | 🔬 `research`, 📖 `content`, 💡 `idea` |
-| **Akshay Kumar** | **Performance & Platform Engineer**<br>AdMob safety guards, R8/ProGuard optimizations & device compatibility | [@akshaykumar-dev](https://github.com/akshaykumar-dev) | ⚡ `performance`, 🛡️ `security`, 🧪 `tests` |
-| **Sneha Rao** | **QA Automation & Documentation**<br>Test engineering, Android instrumentation, documentation & localization | [@sneharao-dev](https://github.com/sneharao-dev) | 📝 `doc`, 🧪 `tests`, 🌐 `i18n` |
+| **Kushal M.N** | **Sole Creator & Lead Android Developer**<br>Jetpack Compose UI/UX, State Architecture, AdMob Optimization, Data Persistence & Android Platform Services | [@KUSHALMN](https://github.com/KUSHALMN) | 💻 `100% Codebase`, 🎨 `Design & Theming`, 🏗️ `Architecture`, 🚀 `All Maintenance` |
 
 ---
 
