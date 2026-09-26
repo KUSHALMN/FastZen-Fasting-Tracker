@@ -463,6 +463,7 @@ fun TrackingScreen(
                     }
 
                     if (symptomLogs.isNotEmpty()) {
+                        val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
                         Spacer(modifier = Modifier.height(12.dp))
                         symptomLogs.take(3).forEach { log ->
                             Row(
@@ -477,7 +478,7 @@ fun TrackingScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(log.timestamp)),
+                                    text = timeFormat.format(Date(log.timestamp)),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

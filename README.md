@@ -64,7 +64,7 @@ FastZen is an Android application built with **Jetpack Compose** and **Material 
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/KUSHALMN/FastZen-Fasting-Tracke.git
+   git clone https://github.com/KUSHALMN/FastZen-Fasting-Tracker.git
    ```
 2. Open the project in **Android Studio Hedgehog / Iguana / Jellyfish** or newer.
 3. Sync Gradle and run on an Android device or emulator running API 26 or higher:

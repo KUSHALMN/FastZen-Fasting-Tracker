@@ -19,3 +19,5 @@ debug.keystore
 debug.keystore.base64
 *.apk
 *.aab
+em_*.txt
+view_app.bat

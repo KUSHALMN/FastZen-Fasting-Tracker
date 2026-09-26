@@ -22,6 +22,7 @@ object FastZenStorage {
     private const val KEY_SELECTED_PLAN = "selected_plan"
     private const val KEY_CUSTOM_HOURS = "custom_hours"
     private const val KEY_STREAK_DAYS = "streak_days"
+    private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
 
     // Alert Sent Flags
     private const val KEY_GOAL_ALERT_SENT = "goal_alert_sent"
@@ -98,6 +99,14 @@ object FastZenStorage {
         } catch (_: Exception) {
             FastingPlan.PLAN_16_8
         }
+    }
+
+    fun hasCompletedOnboarding(context: Context): Boolean {
+        return getPrefs(context).getBoolean(KEY_ONBOARDING_COMPLETED, false)
+    }
+
+    fun setOnboardingCompleted(context: Context, completed: Boolean = true) {
+        getPrefs(context).edit().putBoolean(KEY_ONBOARDING_COMPLETED, completed).apply()
     }
 
     fun saveAlertFlags(context: Context, goalSent: Boolean, ketosisSent: Boolean, autophagySent: Boolean) {

@@ -11,9 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.ui.MainLayout
 import com.example.ui.theme.FastZenTheme
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.RequestConfiguration
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,15 +21,9 @@ class MainActivity : ComponentActivity() {
         // Explicitly configure window for 120Hz high refresh rate display mode
         optimizeHighRefreshRate()
 
-        // Initialize Google Mobile Ads SDK safely if configured (skip on emulator)
-        if (!com.example.util.DeviceUtils.isEmulator && com.example.ui.AdConfig.isAdMobEnabled()) {
-            try {
-                val requestConfig = RequestConfiguration.Builder()
-                    .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
-                    .build()
-                MobileAds.setRequestConfiguration(requestConfig)
-                MobileAds.initialize(this) {}
-            } catch (_: Exception) {}
+        // Initialize Google Mobile Ads SDK with Google UMP Consent flow
+        if (com.example.ui.AdConfig.isAdMobEnabled()) {
+            com.example.ui.AdConfig.initializeWithConsent(this)
         }
 
         setContent {

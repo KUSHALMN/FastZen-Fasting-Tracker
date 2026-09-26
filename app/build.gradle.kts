@@ -19,8 +19,8 @@ android {
 
     buildTypes {
         debug {
-            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
-            buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/6300978111\"")
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-1254750164635651~4904080496"
+            buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-3940256099942544/9214589741\"")
         }
         release {
             isMinifyEnabled = true
@@ -29,21 +29,20 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Production AdMob configuration: can be supplied via gradle property or environment variable
-            // Defaults to placeholder to ensure Google test IDs NEVER ship in production builds
+            // Production AdMob configuration:
             val prodAppId = (project.findProperty("FASTZEN_ADMOB_APP_ID") as? String)
                 ?: System.getenv("FASTZEN_ADMOB_APP_ID")
-                ?: "ca-app-pub-0000000000000000~0000000000"
+                ?: "ca-app-pub-1254750164635651~4904080496"
             val prodBannerId = (project.findProperty("FASTZEN_ADMOB_BANNER_ID") as? String)
                 ?: System.getenv("FASTZEN_ADMOB_BANNER_ID")
-                ?: ""
+                ?: "ca-app-pub-1254750164635651/3823022406"
             manifestPlaceholders["admobAppId"] = prodAppId
             buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"$prodBannerId\"")
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Include user fasting preferences and history for legacy Auto Backup -->
+    <include domain="sharedpref" path="fastzen_preferences.xml"/>
+</full-backup-content>

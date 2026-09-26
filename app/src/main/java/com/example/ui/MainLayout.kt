@@ -28,7 +28,11 @@ import com.example.model.SymptomLog
 import com.example.model.WeightEntry
 import com.example.ui.theme.ThemeManager
 import com.example.util.NotificationHelper
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import java.util.*
 
 enum class FastZenTab(
@@ -49,10 +53,17 @@ enum class FastZenTab(
 fun MainLayout() {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(FastZenTab.TIMER) }
+    var showWelcomeScreen by remember {
+        mutableStateOf(!FastZenStorage.hasCompletedOnboarding(context))
+    }
 
-    // Intercept back button when not on Timer tab to return to Timer tab first
-    BackHandler(enabled = selectedTab != FastZenTab.TIMER) {
-        selectedTab = FastZenTab.TIMER
+    // Intercept back button when on welcome screen or not on Timer tab
+    BackHandler(enabled = showWelcomeScreen || selectedTab != FastZenTab.TIMER) {
+        if (showWelcomeScreen) {
+            showWelcomeScreen = false
+        } else {
+            selectedTab = FastZenTab.TIMER
+        }
     }
 
     // Fasting Plan & Custom Target loaded from persistent local storage
@@ -107,53 +118,104 @@ fun MainLayout() {
     var fastingStyle by remember { mutableStateOf(FastZenStorage.loadFastingStyle(context)) }
     var electrolyteProtocol by remember { mutableStateOf(FastZenStorage.loadElectrolyteProtocol(context)) }
 
-    // Live timer ticking
-    LaunchedEffect(isFasting, fastStartTime) {
-        if (isFasting) {
-            while (true) {
-                elapsedSeconds = ((System.currentTimeMillis() - fastStartTime) / 1000L).coerceAtLeast(0L)
+    // Lifecycle-aware foreground state tracking (prevents background CPU consumption)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isAppInForeground by remember { mutableStateOf(true) }
 
-                // Trigger Goal reached alert if enabled
-                if (notificationPrefs.notificationsEnabled && notificationPrefs.notifyGoalReached && !goalAlertSent) {
-                    if (elapsedSeconds >= activeTargetHours * 3600L) {
-                        NotificationHelper.sendGoalReachedNotification(context, activeTargetHours)
-                        goalAlertSent = true
-                        FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
-                    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isAppInForeground = true
+                if (isFasting) {
+                    elapsedSeconds = ((System.currentTimeMillis() - fastStartTime) / 1000L).coerceAtLeast(0L)
                 }
+            } else if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                isAppInForeground = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
-                // Trigger Ketosis Milestone alert (12 hours)
-                if (notificationPrefs.notificationsEnabled && notificationPrefs.notifyStageMilestones && !ketosisAlertSent) {
-                    if (elapsedSeconds >= 12 * 3600L) {
-                        NotificationHelper.sendStageReachedNotification(
-                            context,
-                            "Ketosis",
-                            "Your body is actively utilizing stored fat for ketones & energy."
-                        )
-                        ketosisAlertSent = true
-                        FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
-                    }
-                }
+    // Helper to evaluate milestone notifications safely without drift
+    fun checkFastingMilestones(currentElapsed: Long) {
+        if (notificationPrefs.notificationsEnabled && notificationPrefs.notifyGoalReached && !goalAlertSent) {
+            if (currentElapsed >= activeTargetHours * 3600L) {
+                NotificationHelper.sendGoalReachedNotification(context, activeTargetHours)
+                goalAlertSent = true
+                FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
+            }
+        }
 
-                // Trigger Autophagy Milestone alert (24 hours)
-                if (notificationPrefs.notificationsEnabled && notificationPrefs.notifyStageMilestones && !autophagyAlertSent) {
-                    if (elapsedSeconds >= 24 * 3600L) {
-                        NotificationHelper.sendStageReachedNotification(
-                            context,
-                            "Autophagy",
-                            "Cellular recycling and mitochondrial renewal are now in high gear."
-                        )
-                        autophagyAlertSent = true
-                        FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
-                    }
-                }
+        if (notificationPrefs.notificationsEnabled && notificationPrefs.notifyStageMilestones && !ketosisAlertSent) {
+            if (currentElapsed >= 12 * 3600L) {
+                NotificationHelper.sendStageReachedNotification(
+                    context,
+                    "Ketosis",
+                    "Your body is actively utilizing stored fat for ketones & energy."
+                )
+                ketosisAlertSent = true
+                FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
+            }
+        }
 
-                delay(1000L)
+        if (notificationPrefs.notificationsEnabled && notificationPrefs.notifyStageMilestones && !autophagyAlertSent) {
+            if (currentElapsed >= 24 * 3600L) {
+                NotificationHelper.sendStageReachedNotification(
+                    context,
+                    "Autophagy",
+                    "Cellular recycling and mitochondrial renewal are now in high gear."
+                )
+                autophagyAlertSent = true
+                FastZenStorage.saveAlertFlags(context, goalAlertSent, ketosisAlertSent, autophagyAlertSent)
             }
         }
     }
 
-    Scaffold(
+    // Battery & RAM-efficient timer ticking (Only active on TIMER tab while in foreground)
+    LaunchedEffect(isFasting, fastStartTime, selectedTab, isAppInForeground) {
+        if (isFasting) {
+            // Immediate timestamp sync upon resume or tab change
+            elapsedSeconds = ((System.currentTimeMillis() - fastStartTime) / 1000L).coerceAtLeast(0L)
+            checkFastingMilestones(elapsedSeconds)
+
+            // Only tick every second if the user is actively viewing the Timer tab in the foreground
+            if (selectedTab == FastZenTab.TIMER && isAppInForeground) {
+                while (isActive) {
+                    delay(1000L)
+                    elapsedSeconds = ((System.currentTimeMillis() - fastStartTime) / 1000L).coerceAtLeast(0L)
+                    checkFastingMilestones(elapsedSeconds)
+                }
+            }
+        }
+    }
+
+    if (showWelcomeScreen) {
+        WelcomeOnboardingScreen(
+            initialPlan = selectedPlan,
+            onGetStarted = { chosenPlan ->
+                selectedPlan = chosenPlan
+                if (chosenPlan != FastingPlan.CUSTOM) {
+                    activeTargetHours = chosenPlan.targetHours
+                } else {
+                    activeTargetHours = customHours
+                }
+                FastZenStorage.saveFastingState(
+                    context = context,
+                    isFasting = isFasting,
+                    startTime = fastStartTime,
+                    targetHours = activeTargetHours,
+                    plan = selectedPlan,
+                    customHours = customHours
+                )
+                FastZenStorage.setOnboardingCompleted(context, true)
+                showWelcomeScreen = false
+            }
+        )
+    } else {
+        Scaffold(
         topBar = {
             TopAppBar(
                 title = {
@@ -430,10 +492,14 @@ fun MainLayout() {
                         onUpdateNotificationPrefs = {
                             notificationPrefs = it
                             FastZenStorage.saveNotificationPreferences(context, it)
+                        },
+                        onShowWelcomeTour = {
+                            showWelcomeScreen = true
                         }
                     )
                 }
             }
         }
     }
+}
 }

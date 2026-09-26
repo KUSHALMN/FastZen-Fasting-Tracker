@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Include FastZen user preferences and fasting history for seamless cloud backup -->
+        <include domain="sharedpref" path="fastzen_preferences.xml"/>
+    </cloud-backup>
+    <device-to-device-transfer>
+        <!-- Allow user fasting history to transfer during device-to-device phone migration -->
+        <include domain="sharedpref" path="fastzen_preferences.xml"/>
+    </device-to-device-transfer>
+</data-extraction-rules>
