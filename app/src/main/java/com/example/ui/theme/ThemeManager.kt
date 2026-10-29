@@ -1,5 +1,6 @@
 package com.example.ui.theme
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -66,14 +67,33 @@ enum class ZenThemePalette(
 }
 
 object ThemeManager {
+    private const val PREFS_NAME = "fastzen_theme"
+    private const val KEY_DARK_MODE = "dark_mode"
+    private const val KEY_PALETTE = "palette"
+
     var currentPalette by mutableStateOf(ZenThemePalette.ZEN_VIOLET)
     var isDarkMode by mutableStateOf(true)
 
-    fun toggleDarkMode() {
-        isDarkMode = !isDarkMode
+    fun init(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        isDarkMode = prefs.getBoolean(KEY_DARK_MODE, true)
+        val paletteName = prefs.getString(KEY_PALETTE, ZenThemePalette.ZEN_VIOLET.name)
+        currentPalette = try {
+            ZenThemePalette.valueOf(paletteName ?: ZenThemePalette.ZEN_VIOLET.name)
+        } catch (_: Exception) {
+            ZenThemePalette.ZEN_VIOLET
+        }
     }
 
-    fun setPalette(palette: ZenThemePalette) {
+    fun toggleDarkMode(context: Context? = null) {
+        isDarkMode = !isDarkMode
+        context?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            ?.edit()?.putBoolean(KEY_DARK_MODE, isDarkMode)?.apply()
+    }
+
+    fun setPalette(palette: ZenThemePalette, context: Context? = null) {
         currentPalette = palette
+        context?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            ?.edit()?.putString(KEY_PALETTE, palette.name)?.apply()
     }
 }
