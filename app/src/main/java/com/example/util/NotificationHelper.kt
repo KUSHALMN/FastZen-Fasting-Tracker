@@ -111,11 +111,16 @@ object NotificationHelper {
     }
 
     fun sendStageReachedNotification(context: Context, stageName: String, summary: String): Boolean {
+        val notificationId = when (stageName) {
+            "Ketosis" -> 1003
+            "Autophagy" -> 1005
+            else -> 1006
+        }
         return showNotification(
             context,
             title = "⚡ Fasting Milestone: $stageName",
             message = summary,
-            notificationId = 1003
+            notificationId = notificationId
         )
     }
 
