@@ -133,12 +133,18 @@ object FastZenStorage {
 
     fun getWaterMl(context: Context): Int {
         val prefs = getPrefs(context)
+        val cal = Calendar.getInstance()
+        val currentDay = cal.get(Calendar.DAY_OF_YEAR)
+        val currentYear = cal.get(Calendar.YEAR)
         val savedDay = prefs.getInt(KEY_WATER_DAY, -1)
-        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val savedYear = prefs.getInt("water_year", -1)
 
-        return if (savedDay != currentDay) {
-            // New day: reset to 0
-            prefs.edit().putInt(KEY_WATER_DAY, currentDay).putInt(KEY_WATER_ML, 0).apply()
+        return if (savedDay != currentDay || savedYear != currentYear) {
+            prefs.edit()
+                .putInt(KEY_WATER_DAY, currentDay)
+                .putInt("water_year", currentYear)
+                .putInt(KEY_WATER_ML, 0)
+                .apply()
             0
         } else {
             prefs.getInt(KEY_WATER_ML, 0)
@@ -146,9 +152,10 @@ object FastZenStorage {
     }
 
     fun saveWaterMl(context: Context, amountMl: Int) {
-        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val cal = Calendar.getInstance()
         getPrefs(context).edit().apply {
-            putInt(KEY_WATER_DAY, currentDay)
+            putInt(KEY_WATER_DAY, cal.get(Calendar.DAY_OF_YEAR))
+            putInt("water_year", cal.get(Calendar.YEAR))
             putInt(KEY_WATER_ML, amountMl)
             apply()
         }
@@ -345,10 +352,13 @@ object FastZenStorage {
 
     fun loadElectrolyteProtocol(context: Context): ElectrolyteProtocol {
         val prefs = getPrefs(context)
-        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val cal = Calendar.getInstance()
+        val currentDay = cal.get(Calendar.DAY_OF_YEAR)
+        val currentYear = cal.get(Calendar.YEAR)
         val savedDay = prefs.getInt(KEY_ELECTROLYTE_DAY, -1)
+        val savedYear = prefs.getInt("electrolyte_year", -1)
 
-        return if (savedDay != currentDay) {
+        return if (savedDay != currentDay || savedYear != currentYear) {
             // Reset for new day
             ElectrolyteProtocol()
         } else {
@@ -370,9 +380,10 @@ object FastZenStorage {
     }
 
     fun saveElectrolyteProtocol(context: Context, protocol: ElectrolyteProtocol) {
-        val currentDay = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val cal = Calendar.getInstance()
         getPrefs(context).edit().apply {
-            putInt(KEY_ELECTROLYTE_DAY, currentDay)
+            putInt(KEY_ELECTROLYTE_DAY, cal.get(Calendar.DAY_OF_YEAR))
+            putInt("electrolyte_year", cal.get(Calendar.YEAR))
             putBoolean(KEY_ELECTROLYTE_SALT, protocol.pinkSalt)
             putBoolean(KEY_ELECTROLYTE_KM, protocol.potassiumMagnesium)
             putBoolean(KEY_ELECTROLYTE_COFFEE, protocol.blackCoffeeOrTea)
