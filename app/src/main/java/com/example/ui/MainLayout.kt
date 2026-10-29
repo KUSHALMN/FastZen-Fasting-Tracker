@@ -247,7 +247,7 @@ fun MainLayout() {
                         )
                     }
                     IconButton(
-                        onClick = { ThemeManager.toggleDarkMode() },
+                        onClick = { ThemeManager.toggleDarkMode(context) },
                         modifier = Modifier.testTag("appbar_theme_toggle")
                     ) {
                         Icon(
@@ -343,8 +343,8 @@ fun MainLayout() {
                             FastZenStorage.saveAlertFlags(context, false, false, false)
                         },
                         onEndFast = {
-                            if (elapsedSeconds > 10) {
-                                val targetSecs = activeTargetHours * 3600L
+                            val targetSecs = activeTargetHours * 3600L
+                            if (elapsedSeconds >= targetSecs) {
                                 val newSession = FastSession(
                                     id = UUID.randomUUID().toString(),
                                     plan = selectedPlan,
@@ -352,13 +352,26 @@ fun MainLayout() {
                                     startTime = fastStartTime,
                                     endTime = System.currentTimeMillis(),
                                     durationSeconds = elapsedSeconds,
-                                    completedTarget = elapsedSeconds >= targetSecs,
+                                    completedTarget = true,
                                     fastingStyle = fastingStyle.title
                                 )
                                 sessions.add(0, newSession)
                                 FastZenStorage.saveSessions(context, sessions)
                                 streakDays += 1
                                 FastZenStorage.saveStreakDays(context, streakDays)
+                            } else if (elapsedSeconds >= 60L) {
+                                val newSession = FastSession(
+                                    id = UUID.randomUUID().toString(),
+                                    plan = selectedPlan,
+                                    targetHours = activeTargetHours,
+                                    startTime = fastStartTime,
+                                    endTime = System.currentTimeMillis(),
+                                    durationSeconds = elapsedSeconds,
+                                    completedTarget = false,
+                                    fastingStyle = fastingStyle.title
+                                )
+                                sessions.add(0, newSession)
+                                FastZenStorage.saveSessions(context, sessions)
                             }
                             isFasting = false
                             elapsedSeconds = 0L
@@ -370,8 +383,8 @@ fun MainLayout() {
                             FastZenStorage.saveAlertFlags(context, false, false, false)
                         },
                         onEndFastWithJournal = { clarity, energy, hunger, note, style ->
-                            if (elapsedSeconds > 10) {
-                                val targetSecs = activeTargetHours * 3600L
+                            val targetSecs = activeTargetHours * 3600L
+                            if (elapsedSeconds >= targetSecs) {
                                 val newSession = FastSession(
                                     id = UUID.randomUUID().toString(),
                                     plan = selectedPlan,
@@ -379,7 +392,7 @@ fun MainLayout() {
                                     startTime = fastStartTime,
                                     endTime = System.currentTimeMillis(),
                                     durationSeconds = elapsedSeconds,
-                                    completedTarget = elapsedSeconds >= targetSecs,
+                                    completedTarget = true,
                                     mentalClarity = clarity,
                                     energyLevel = energy,
                                     hungerLevel = hunger,
@@ -390,6 +403,23 @@ fun MainLayout() {
                                 FastZenStorage.saveSessions(context, sessions)
                                 streakDays += 1
                                 FastZenStorage.saveStreakDays(context, streakDays)
+                            } else if (elapsedSeconds >= 60L) {
+                                val newSession = FastSession(
+                                    id = UUID.randomUUID().toString(),
+                                    plan = selectedPlan,
+                                    targetHours = activeTargetHours,
+                                    startTime = fastStartTime,
+                                    endTime = System.currentTimeMillis(),
+                                    durationSeconds = elapsedSeconds,
+                                    completedTarget = false,
+                                    mentalClarity = clarity,
+                                    energyLevel = energy,
+                                    hungerLevel = hunger,
+                                    reflectionNote = note,
+                                    fastingStyle = style.title
+                                )
+                                sessions.add(0, newSession)
+                                FastZenStorage.saveSessions(context, sessions)
                             }
                             isFasting = false
                             elapsedSeconds = 0L
