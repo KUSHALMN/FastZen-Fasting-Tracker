@@ -490,7 +490,8 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    FastingPlan.values().forEach { plan ->
+                    val plans = remember { FastingPlan.values() }
+                    plans.forEach { plan ->
                         val isSelected = plan == currentPlan
                         val displayHours = if (plan == FastingPlan.CUSTOM) customHours else plan.targetHours
                         Row(
@@ -591,7 +592,7 @@ fun SettingsScreen(
                         }
                         Switch(
                             checked = ThemeManager.isDarkMode,
-                            onCheckedChange = { ThemeManager.toggleDarkMode() },
+                            onCheckedChange = { ThemeManager.toggleDarkMode(context) },
                             modifier = Modifier.testTag("dark_mode_switch")
                         )
                     }
@@ -608,7 +609,8 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    ZenThemePalette.values().forEach { palette ->
+                    val palettes = remember { ZenThemePalette.values() }
+                    palettes.forEach { palette ->
                         val isSelected = ThemeManager.currentPalette == palette
                         Row(
                             modifier = Modifier
@@ -618,7 +620,7 @@ fun SettingsScreen(
                                     if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                     else Color.Transparent
                                 )
-                                .clickable { ThemeManager.setPalette(palette) }
+                                .clickable { ThemeManager.setPalette(palette, context) }
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
