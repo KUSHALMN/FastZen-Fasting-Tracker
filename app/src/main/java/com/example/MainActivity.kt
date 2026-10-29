@@ -13,10 +13,13 @@ import com.example.ui.MainLayout
 import com.example.ui.theme.FastZenTheme
 
 
+import com.example.ui.theme.ThemeManager
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ThemeManager.init(this)
 
         // Explicitly configure window for 120Hz high refresh rate display mode
         optimizeHighRefreshRate()
