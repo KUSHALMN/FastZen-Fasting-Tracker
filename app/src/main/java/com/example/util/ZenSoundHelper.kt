@@ -5,6 +5,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.exp
@@ -39,8 +40,10 @@ object ZenSoundHelper {
     /**
      * Plays the selected soundscape asynchronously in IO dispatcher.
      */
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     fun playSound(soundType: SoundType = SoundType.TIBETAN_BOWL) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             try {
                 when (soundType) {
                     SoundType.TIBETAN_BOWL -> generateTibetanBowl()
