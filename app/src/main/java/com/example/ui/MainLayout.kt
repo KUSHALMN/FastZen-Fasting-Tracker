@@ -271,7 +271,8 @@ fun MainLayout() {
                     containerColor = MaterialTheme.colorScheme.surface,
                     tonalElevation = 8.dp
                 ) {
-                    FastZenTab.values().forEach { tab ->
+        val tabs = remember { FastZenTab.values() }
+                    tabs.forEach { tab ->
                         val isSelected = selectedTab == tab
                         NavigationBarItem(
                             selected = isSelected,
