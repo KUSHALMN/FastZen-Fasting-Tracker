@@ -30,6 +30,10 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * AdMob configuration manager.
@@ -101,11 +105,13 @@ object AdConfig {
     /**
      * Initializes the Google Mobile Ads SDK exactly once in the application process.
      */
+    private val adScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     fun initializeMobileAds(context: Context) {
         if (!isMobileAdsInitialized.compareAndSet(false, true)) {
             return
         }
-        Thread {
+        adScope.launch {
             try {
                 val requestConfig = RequestConfiguration.Builder()
                     .setTestDeviceIds(listOf(AdRequest.DEVICE_ID_EMULATOR))
@@ -113,7 +119,7 @@ object AdConfig {
                 MobileAds.setRequestConfiguration(requestConfig)
                 MobileAds.initialize(context.applicationContext) {}
             } catch (_: Exception) {}
-        }.start()
+        }
     }
 
     /**
